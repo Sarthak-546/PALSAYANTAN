@@ -1,0 +1,49 @@
+
+> sih-prototype@0.0.0 build
+> tsc -b && vite build
+
+src/components/ar/ChestTarget.tsx(1,1): error TS6133: 'useState' is declared but its value is never read.
+src/components/ar/ProgressIndicator.tsx(1,1): error TS6133: 'useState' is declared but its value is never read.
+src/components/ar/SternumOverlay.tsx(12,10): error TS6133: 'canvasSize' is declared but its value is never read.
+src/components/camera/CameraViewport.tsx(41,13): error TS18046: 'err' is of type 'unknown'.
+src/components/camera/CameraViewport.tsx(43,20): error TS18046: 'err' is of type 'unknown'.
+src/components/camera/CameraViewport.tsx(45,20): error TS18046: 'err' is of type 'unknown'.
+src/components/camera/PoseDetectionCamera.tsx(1,29): error TS6133: 'useState' is declared but its value is never read.
+src/components/camera/PoseDetectionCamera.tsx(29,11): error TS7022: 'pose' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/components/camera/PoseDetectionCamera.tsx(29,22): error TS2448: Block-scoped variable 'pose' used before its declaration.
+src/components/camera/PoseDetectionCamera.tsx(30,20): error TS7006: Parameter 'file' implicitly has an 'any' type.
+src/components/camera/PoseDetectionCamera.tsx(41,21): error TS7006: Parameter 'results' implicitly has an 'any' type.
+src/components/camera/ScanOverlay.tsx(1,1): error TS6192: All imports in import declaration are unused.
+src/components/emergency/EmergencyActionPanel.tsx(1,10): error TS6133: 'useEffect' is declared but its value is never read.
+src/components/first-aid/FirstAidCard.tsx(1,1): error TS6133: 'ReactNode' is declared but its value is never read.
+src/components/first-aid/FirstAidCard.tsx(1,10): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/first-aid/FirstAidCard.tsx(30,9): error TS6133: 'IconComponent' is declared but its value is never read.
+src/components/location/LocationPanel.tsx(31,8): error TS6133: 'position' is declared but its value is never read.
+src/components/ui/Logo.tsx(1,1): error TS6133: 'ReactNode' is declared but its value is never read.
+src/components/ui/Logo.tsx(1,10): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/ui/ToggleSwitch.tsx(1,1): error TS6133: 'useState' is declared but its value is never read.
+src/contexts/EmergencySessionContext.tsx(1,58): error TS6133: 'useCallback' is declared but its value is never read.
+src/pages/ArFirstAid.tsx(92,13): error TS2322: Type 'RefObject<HTMLVideoElement | null>' is not assignable to type 'RefObject<HTMLVideoElement>'.
+  Type 'HTMLVideoElement | null' is not assignable to type 'HTMLVideoElement'.
+    Type 'null' is not assignable to type 'HTMLVideoElement'.
+src/pages/ArFirstAid.tsx(98,13): error TS2322: Type 'string' is not assignable to type '"SEARCHING_FOR_TARGET" | "LOCKED"'.
+src/pages/ArFirstAid.tsx(104,13): error TS2322: Type 'string' is not assignable to type '"SEARCHING_FOR_TARGET" | "LOCKED"'.
+src/pages/EmergencyDetected.tsx(6,1): error TS6133: 'LocationSharing' is declared but its value is never read.
+src/pages/EmergencyDetected.tsx(10,11): error TS6133: 'demoMode' is declared but its value is never read.
+src/pages/EmergencyDetected.tsx(10,21): error TS6133: 'setDemoMode' is declared but its value is never read.
+src/pages/EmergencyDetected.tsx(10,49): error TS6133: 'setVoiceGuidance' is declared but its value is never read.
+src/pages/EmergencyDetected.tsx(23,9): error TS6133: 'formatTime' is declared but its value is never read.
+src/pages/EmergencyScan.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/pages/EmergencyScan.tsx(3,10): error TS6133: 'Camera' is declared but its value is never read.
+src/pages/EmergencyScan.tsx(3,33): error TS6133: 'Activity' is declared but its value is never read.
+src/pages/EmergencyScan.tsx(7,29): error TS2307: Cannot find module '../components/ar/ScanOverlay' or its corresponding type declarations.
+src/pages/EmergencyScan.tsx(22,20): error TS6133: 'setDemoMode' is declared but its value is never read.
+src/pages/EmergencyScan.tsx(62,9): error TS6133: 'handlePoseDetected' is declared but its value is never read.
+src/pages/EmergencyScan.tsx(127,29): error TS2322: Type '{ targetX: string; targetY: string; }' is not assignable to type 'IntrinsicAttributes & SternumOverlayProps'.
+  Property 'targetX' does not exist on type 'IntrinsicAttributes & SternumOverlayProps'.
+src/pages/EmergencyScan.tsx(131,27): error TS2322: Type 'string' is not assignable to type 'boolean'.
+src/pages/EmergencyScan.tsx(187,14): error TS2739: Type '{}' is missing the following properties from type 'EmergencyActionPanelProps': onEmergencyDetected, demoMode
+src/pages/FirstAidDetail.tsx(6,31): error TS2307: Cannot find module '../components/ar/AudioGuidance' or its corresponding type declarations.
+src/pages/FirstAidDetail.tsx(15,28): error TS2304: Cannot find name 'useRef'.
+src/pages/Location.tsx(5,1): error TS6133: 'LocationPanel' is declared but its value is never read.
+src/pages/Location.tsx(10,21): error TS6133: 'setDemoMode' is declared but its value is never read.
