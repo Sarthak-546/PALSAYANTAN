@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BurnSlideshow } from '../components/first-aid/BurnSlideshow';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Shield, Volume2, VolumeX, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Shield, Volume2, VolumeX, XCircle, Video } from 'lucide-react';
 import { AudioGuidance } from '../components/ar/AudioGuidance';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { useScenario } from '../hooks/useScenario';
@@ -20,10 +20,23 @@ export const FirstAidDetail = () => {
   const { scenario } = useScenario();
   const [currentStep, setCurrentStep] = useState(0);
   const [showDos, setShowDos] = useState(true);
+  const [selectedChokingVideo, setSelectedChokingVideo] = useState<'A' | 'B'>('A');
 
   useEffect(() => {
     setCurrentStep(0);
   }, [scenario?.id]);
+
+  useEffect(() => {
+    if (scenario?.id === 'choking' && scenario.steps && scenario.steps[currentStep]) {
+      const stepObj = scenario.steps[currentStep];
+      const text = stepObj.instruction.toLowerCase() + stepObj.detail.toLowerCase();
+      if (text.includes('abdominal thrust') || text.includes('heimlich')) {
+        setSelectedChokingVideo('B');
+      } else if (text.includes('back blow') || text.includes('back-blow')) {
+        setSelectedChokingVideo('A');
+      }
+    }
+  }, [currentStep, scenario]);
 
   // ── Not found ──────────────────────────────────────────────────────────────
   if (!scenario) {
@@ -105,6 +118,63 @@ export const FirstAidDetail = () => {
           <h2 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Overview</h2>
           <p className="text-gray-700 dark:text-slate-300 text-sm leading-relaxed">{scenario.overview}</p>
         </div>
+
+        {/* ── Optional Offline Video Demonstration (Choking) ── */}
+        {(scenario.id === 'choking' || scenario.id === 'choke') && (
+          <div className="w-full max-w-xl mx-auto mb-6 rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl flex flex-col">
+            {/* Header Bar */}
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-950/80 border-b border-white/5">
+              <div className="flex items-center space-x-2">
+                <Video className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                  Technique Video Demonstration
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                OFFLINE VIDEO
+              </span>
+            </div>
+
+            {/* Sub-selector Pills */}
+            <div className="flex bg-slate-950 p-1.5 gap-2 border-b border-white/5">
+              <button
+                onClick={() => setSelectedChokingVideo('A')}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+                  selectedChokingVideo === 'A' ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                1. Back Blows Demo
+              </button>
+              <button
+                onClick={() => setSelectedChokingVideo('B')}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+                  selectedChokingVideo === 'B' ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                2. Abdominal Thrusts Demo
+              </button>
+            </div>
+
+            {/* Video Viewport (No Cropping) */}
+            <div className="relative w-full aspect-[16/9] bg-black flex items-center justify-center overflow-hidden">
+              <video
+                key={selectedChokingVideo}
+                src={selectedChokingVideo === 'A' ? '/videos/A.mp4' : '/videos/B.mp4'}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-contain pointer-events-none"
+                onError={(e) => {
+                  const vid = e.currentTarget as HTMLVideoElement;
+                  if (!vid.src.includes('/A.mp4') && !vid.src.includes('/B.mp4')) return;
+                  // Try root fallback once if /videos/ path fails
+                  vid.src = selectedChokingVideo === 'A' ? '/A.mp4' : '/B.mp4';
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {scenario.id === 'burns' ? (
           <div className="mb-5">
