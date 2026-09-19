@@ -113,8 +113,8 @@ export const LocationSharing = ({ location, onShare, demoMode, className = '' }:
                 <div className="text-gray-800 font-medium">Emergency Assistance Request</div>
                 <div className="text-gray-600 text-sm">
                   Situation: Possible medical emergency<br />
-                  Coordinates: ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}<br />
-                  Timestamp: ${new Date(location.timestamp).toLocaleString()}
+                  Coordinates: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}<br />
+                  Timestamp: {new Date(location.timestamp).toLocaleString()}
                 </div>
               </div>
             </div>
