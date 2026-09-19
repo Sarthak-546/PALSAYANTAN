@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface ChestTargetProps {
   trackingState: 'SEARCHING_FOR_TARGET' | 'LOCKED';

@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEmergencySession } from '../contexts/EmergencySessionContext';
-import { Button } from '../components/ui/Button';
-import { StatusIndicator } from '../components/ui/StatusIndicator';
-import { Logo } from '../components/ui/Logo';
+import { HeartPulse, Heart, Droplet, ShieldAlert, Camera, BookOpen, MapPin } from 'lucide-react';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
+import { ROUTES } from '../routes';
 
 export const Home = () => {
   const navigate = useNavigate();
-  const { setDemoMode } = useEmergencySession();
   const [initializing, setInitializing] = useState(true);
   const [systemsReady, setSystemsReady] = useState({
     camera: false,
@@ -17,195 +15,174 @@ export const Home = () => {
   });
 
   useEffect(() => {
-    // Simulate system initialization
-    const initSystems = async () => {
-      // Simulate checking each system with staggered timing
-      setTimeout(() => {
-        setSystemsReady(prev => ({ ...prev, camera: true }));
-      }, 500);
-
-      setTimeout(() => {
-        setSystemsReady(prev => ({ ...prev, ai: true }));
-      }, 1000);
-
-      setTimeout(() => {
-        setSystemsReady(prev => ({ ...prev, offline: true }));
-      }, 1500);
-
-      setTimeout(() => {
-        setSystemsReady(prev => ({ ...prev, gps: true }));
+    // Staged "boot" animation. Timers are cleared on unmount so leaving Home early is safe.
+    const timers = [
+      window.setTimeout(() => setSystemsReady(p => ({ ...p, camera: true })), 500),
+      window.setTimeout(() => setSystemsReady(p => ({ ...p, ai: true })), 1000),
+      window.setTimeout(() => setSystemsReady(p => ({ ...p, offline: true })), 1500),
+      window.setTimeout(() => {
+        setSystemsReady(p => ({ ...p, gps: true }));
         setInitializing(false);
-      }, 2000);
-    };
-
-    initSystems();
+      }, 2000),
+    ];
+    return () => timers.forEach(window.clearTimeout);
   }, []);
 
+  // ── Initializing Boot Screen ──
   if (initializing) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-6 text-white">
-        <Logo className="mb-8" size="large" />
-        <h1 className="text-4xl font-bold mb-4 text-center">
-          AR Emergency First Aid Assistant
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-slate-900 dark:text-slate-100 transition-colors">
+        <HeartPulse className="w-16 h-16 text-red-500 animate-pulse mb-6" />
+        <h1 className="text-2xl font-extrabold tracking-tight mb-2 text-center">
+          AR Emergency Assistant
         </h1>
-        <p className="text-lg text-gray-300 mb-8 max-w-md text-center">
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-10 text-center max-w-xs">
           Real-time guidance when every second matters.
         </p>
 
-        <div className="space-y-4 w-full max-w-md">
-          <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-sm">Camera system</span>
+        <div className="space-y-4 w-full max-w-[200px] mb-8">
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.camera ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
+            <span className="text-xs font-medium tracking-wide">Camera System</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-sm">AI assessment</span>
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.ai ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
+            <span className="text-xs font-medium tracking-wide">AI Assessment</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-sm">Offline assistant</span>
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.offline ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
+            <span className="text-xs font-medium tracking-wide">Offline Core</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-sm">GPS</span>
+          <div className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.gps ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
+            <span className="text-xs font-medium tracking-wide">GPS Uplink</span>
           </div>
-        </div>
-
-        <div className="mt-8 flex items-center space-x-3 text-xs text-gray-400">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span>System Ready</span>
-          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-          <span>Prototype</span>
         </div>
       </div>
     );
   }
 
+  // ── Main Home Interface ──
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-md mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-3">
-            <Logo size="small" className="h-8 w-8" />
-            <h1 className="text-2xl font-bold text-gray-800">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between items-center p-4 sm:p-6 transition-colors">
+
+      {/* ── Main Layout Wrapper ── */}
+      <div className="w-full max-w-md mx-auto flex flex-col gap-5 flex-1 justify-center relative pb-10">
+
+        {/* ── Top Header Bar ── */}
+        <header className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2.5">
+            <HeartPulse className="w-6 h-6 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" />
+            <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
               AR Emergency Assistant
             </h1>
           </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-mono bg-slate-100 dark:bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full tracking-wider font-bold shadow-sm">
+              OFFLINE ENGINE ACTIVE
+            </span>
+            <ThemeToggle className="scale-90" />
+          </div>
+        </header>
+
+        {/* ── Quick Emergency Protocols (Triage Cards) ── */}
+        <section className="grid grid-cols-3 gap-2.5 sm:gap-3">
           <button
-            onClick={() => setDemoMode(!true)} // Toggle demo mode
-            className="text-xs text-gray-500 hover:text-gray-700"
+            onClick={() => navigate('/emergency-scan?protocol=cpr')}
+            className="flex flex-col items-center justify-center gap-2 text-center bg-red-100/50 dark:bg-red-950/40 border border-red-300 dark:border-red-500/30 hover:border-red-400 dark:hover:border-red-500/60 p-3 sm:p-3.5 rounded-2xl shadow-sm transition-all active:scale-95 group"
           >
-            DEMO MODE
+            <Heart className="w-5 h-5 text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform drop-shadow-sm" />
+            <div>
+              <p className="text-xs sm:text-sm font-bold text-red-900 dark:text-red-100 mb-0.5">CPR</p>
+              <p className="text-[9px] sm:text-[10px] text-red-700 dark:text-red-300/70 font-medium leading-tight hidden sm:block">110 BPM Sternum Pacing</p>
+            </div>
           </button>
-        </div>
 
-        {/* Quick Access Emergency Protocols */}
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Quick Access
-          </h2>
-          <p className="text-gray-600 mb-4">
-            Jump directly to critical emergency procedures
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/ar-first-aid?type=cpr')}
-              className="h-12"
-            >
-              CPR
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/ar-first-aid?type=bleeding')}
-              className="h-12"
-            >
-              Bleeding
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/ar-first-aid?type=choking')}
-              className="h-12"
-            >
-              Choking
-            </Button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-            Need emergency assistance?
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Start an assisted emergency assessment.
-          </p>
-          <Button
-            variant="primary"
-            size="large"
-            onClick={() => navigate('/scan')}
-            className="w-full"
+          <button
+            onClick={() => navigate('/emergency-scan?protocol=bleeding')}
+            className="flex flex-col items-center justify-center gap-2 text-center bg-amber-100/50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-500/30 hover:border-amber-400 dark:hover:border-amber-500/60 p-3 sm:p-3.5 rounded-2xl shadow-sm transition-all active:scale-95 group"
           >
-            START EMERGENCY SCAN
-          </Button>
-          <div className="mt-6 space-y-3">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/first-aid')}
-              className="w-full"
-            >
-              FIRST AID LIBRARY
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/location')}
-              className="w-full"
-            >
-              SHARE LOCATION
-            </Button>
-          </div>
-        </div>
+            <Droplet className="w-5 h-5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform drop-shadow-sm" />
+            <div>
+              <p className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-100 mb-0.5">Bleeding</p>
+              <p className="text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-300/70 font-medium leading-tight hidden sm:block">Direct Arterial Pressure</p>
+            </div>
+          </button>
 
-        <div className="bg-white rounded-xl shadow-md p-4">
-          <div className="grid grid-cols-4 gap-4 text-center text-sm">
+          <button
+            onClick={() => navigate('/emergency-scan?protocol=choking')}
+            className="flex flex-col items-center justify-center gap-2 text-center bg-cyan-100/50 dark:bg-cyan-950/40 border border-cyan-300 dark:border-cyan-500/30 hover:border-cyan-400 dark:hover:border-cyan-500/60 p-3 sm:p-3.5 rounded-2xl shadow-sm transition-all active:scale-95 group"
+          >
+            <ShieldAlert className="w-5 h-5 text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform drop-shadow-sm" />
             <div>
-              <div className="text-gray-500">Camera</div>
-              <div className="mt-1">
-                <StatusIndicator
-                  status={systemsReady.camera ? 'ready' : 'offline'}
-                  label={systemsReady.camera ? 'READY' : 'UNAVAILABLE'}
-                />
-              </div>
+              <p className="text-xs sm:text-sm font-bold text-cyan-900 dark:text-cyan-100 mb-0.5">Choking</p>
+              <p className="text-[9px] sm:text-[10px] text-cyan-700 dark:text-cyan-300/70 font-medium leading-tight hidden sm:block">5 Back Blows & Thrusts</p>
             </div>
-            <div>
-              <div className="text-gray-500">AI Engine</div>
-              <div className="mt-1">
-                <StatusIndicator
-                  status={systemsReady.ai ? 'ready' : 'offline'}
-                  label={systemsReady.ai ? 'OFFLINE READY' : 'OFFLINE'}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-500">GPS</div>
-              <div className="mt-1">
-                <StatusIndicator
-                  status={systemsReady.gps ? 'ready' : 'offline'}
-                  label={systemsReady.gps ? 'AVAILABLE' : 'UNAVAILABLE'}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="text-gray-500">Offline</div>
-              <div className="mt-1">
-                <StatusIndicator
-                  status={systemsReady.offline ? 'ready' : 'offline'}
-                  label={systemsReady.offline ? 'READY' : 'UNAVAILABLE'}
-                />
-              </div>
-            </div>
+          </button>
+        </section>
+
+        {/* ── Primary Emergency Hero Card ── */}
+        <section className="bg-white/80 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 rounded-[1.5rem] p-5 sm:p-6 shadow-xl dark:shadow-2xl backdrop-blur-md">
+          <div className="text-center mb-5 mt-1">
+            <h2 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 tracking-tight mb-1.5">
+              Need Immediate Assistance?
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium">
+              Start an assisted emergency assessment.
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate(ROUTES.emergencyScan)}
+            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] active:scale-95 transition-all flex items-center justify-center gap-3 mb-4"
+          >
+            <Camera className="w-5 h-5 flex-shrink-0" />
+            <span className="tracking-wide">START AR EMERGENCY SCAN</span>
+          </button>
+
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <button
+              onClick={() => navigate(ROUTES.firstAid)}
+              className="bg-slate-100 hover:bg-slate-200 border border-slate-200/60 dark:bg-slate-800/70 dark:hover:bg-slate-800 dark:border-slate-700/60 text-slate-700 dark:text-slate-200 py-3 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold tracking-wide transition-colors active:scale-95"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              First Aid Library
+            </button>
+            <button
+              onClick={() => navigate(ROUTES.location)}
+              className="bg-slate-100 hover:bg-slate-200 border border-slate-200/60 dark:bg-slate-800/70 dark:hover:bg-slate-800 dark:border-slate-700/60 text-slate-700 dark:text-slate-200 py-3 rounded-xl flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold tracking-wide transition-colors active:scale-95"
+            >
+              <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              Share Location
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+      {/* ── Hardware Diagnostics Status Pill Bar (Footer) ── */}
+      <footer className="w-full max-w-md mx-auto">
+        <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl py-3 px-3 sm:px-4 flex items-center justify-between backdrop-blur-md shadow-sm">
+          <div className="flex items-center gap-1.5 focus:outline-none" title="Camera Status">
+            <div className={`w-2 h-2 rounded-full ${systemsReady.camera ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-300 dark:bg-slate-700'}`} />
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-wide text-slate-600 dark:text-slate-400 uppercase">Camera</span>
+          </div>
+          <div className="flex items-center gap-1.5 focus:outline-none" title="AI Engine Status">
+            <div className={`w-2 h-2 rounded-full ${systemsReady.ai ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-300 dark:bg-slate-700'}`} />
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-wide text-slate-600 dark:text-slate-400 uppercase">AI Engine</span>
+          </div>
+          <div className="flex items-center gap-1.5 focus:outline-none" title="GPS Status">
+            <div className={`w-2 h-2 rounded-full ${systemsReady.gps ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-300 dark:bg-slate-700'}`} />
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-wide text-slate-600 dark:text-slate-400 uppercase">GPS</span>
+          </div>
+          <div className="flex items-center gap-1.5 focus:outline-none" title="Offline Cache Status">
+            <div className={`w-2 h-2 rounded-full ${systemsReady.offline ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-amber-500 shadow-[0_0_8px_#f59e0b]'}`} />
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-wide text-slate-600 dark:text-slate-400 uppercase">Offline Cache</span>
           </div>
         </div>
-      </div>
-    );
+      </footer>
+    </div>
   );
-}
+};
+
+export default Home;

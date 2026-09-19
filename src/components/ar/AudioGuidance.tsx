@@ -1,40 +1,72 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface AudioGuidanceProps {
-  className?: string;
+  text: string | null;
+  isActive: boolean;
+  voice?: SpeechSynthesisVoice;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
 }
 
-export const AudioGuidance = ({ className = '' }: AudioGuidanceProps) => {
+export const AudioGuidance = ({
+  text,
+  isActive,
+  voice,
+  rate = 1.0,
+  pitch = 1.0,
+  volume = 1.0
+}: AudioGuidanceProps) => {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-
-  const speechSynthesisSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const isSpeakingRef = useRef(false);
 
   useEffect(() => {
-    if (!speechSynthesisSupported) return;
-
-    utteranceRef.current = new SpeechSynthesisUtterance();
-    utteranceRef.current.rate = 0.9;
-    utteranceRef.current.volume = 0.8;
-    utteranceRef.current.pitch = 1;
-
-    utteranceRef.current.onstart = () => setIsSpeaking(true);
-    utteranceRef.current.onend = () => setIsSpeaking(false);
-    utteranceRef.current.onerror = () => setIsSpeaking(false);
-
+    // Cleanup on unmount
     return () => {
-      if (speechSynthesisSupported) {
+      if (utteranceRef.current) {
+        utteranceRef.current.onend = null;
+        utteranceRef.current.onerror = null;
         window.speechSynthesis.cancel();
       }
-      utteranceRef.current = null;
     };
-  }, [speechSynthesisSupported]);
+  }, []);
 
-  return (
-    <div className={className}>
-      {isSpeaking && <span className="sr-only">Voice guidance active</span>}
-    </div>
-  );
+  useEffect(() => {
+    if (!isActive || !text || !window.speechSynthesis) return;
+
+    // Don't interrupt if already speaking this exact text
+    if (
+      isSpeakingRef.current &&
+      utteranceRef.current &&
+      utteranceRef.current.text === text
+    ) {
+      return;
+    }
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Create new utterance
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.voice = voice;
+    utterance.rate = rate;
+    utterance.pitch = pitch;
+    utterance.volume = volume;
+
+    utterance.onend = () => {
+      isSpeakingRef.current = false;
+    };
+
+    utterance.onerror = (event) => {
+      console.error('Speech synthesis error:', event);
+      isSpeakingRef.current = false;
+    };
+
+    // Speak
+    window.speechSynthesis.speak(utterance);
+    utteranceRef.current = utterance;
+    isSpeakingRef.current = true;
+  }, [text, isActive, voice, rate, pitch, volume]);
+
+  return null; // This component doesn't render anything visual
 };
-
-export default AudioGuidance;

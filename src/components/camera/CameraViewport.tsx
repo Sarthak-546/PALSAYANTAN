@@ -1,79 +1,76 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 
 interface CameraViewportProps {
-  videoRef: React.RefObject<HTMLVideoElement>;
-  onError: (error: string) => void;
+  videoRef?: RefObject<HTMLVideoElement | null>;
+  onError?: (message: string) => void;
   className?: string;
 }
 
 export const CameraViewport = ({ videoRef, onError, className = '' }: CameraViewportProps) => {
-  const videoElementRef = useRef<HTMLVideoElement>(null);
+  const localRef = useRef<HTMLVideoElement | null>(null);
+  const ref = videoRef ?? localRef;
+
+  // Keep the latest onError without restarting the camera when the parent re-renders.
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  });
 
   useEffect(() => {
-    const startVideo = async () => {
+    const video = ref.current;
+    let stream: MediaStream | null = null;
+    let cancelled = false;
+    const fail = (msg: string) => {
+      if (!cancelled) onErrorRef.current?.(msg);
+    };
+
+    async function start() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        fail(
+          window.isSecureContext
+            ? 'Camera not supported on this device'
+            : 'Camera needs HTTPS (or localhost) to work',
+        );
+        return;
+      }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          }
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
         });
-
-        if (videoElementRef.current) {
-          videoElementRef.current.srcObject = stream;
-          videoElementRef.current.play().catch(e => {
-            console.error('Error playing video:', e);
-            onError('Failed to play video stream');
-          });
+        // Unmounted (or React StrictMode re-mounted) while the permission prompt was open:
+        // release this stream or the camera stays "in use" and the next attempt fails.
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
         }
-
-        // Also set the passed ref for parent component access
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(e => {
-            console.error('Error playing video on passed ref:', e);
-          });
+        stream = s;
+        if (video) {
+          video.srcObject = s;
+          await video.play().catch(() => {});
         }
       } catch (err) {
-        console.error('Error accessing camera:', err);
-        let errorMessage = 'Unable to access camera';
-        if (err.name === 'NotAllowedError') {
-          errorMessage = 'Camera permission denied';
-        } else if (err.name === 'NotFoundError') {
-          errorMessage = 'No camera found';
-        } else if (err.name === 'NotReadableError') {
-          errorMessage = 'Camera is already in use';
-        }
-        onError(errorMessage);
+        const name = (err as DOMException)?.name;
+        if (name === 'NotAllowedError') fail('Camera permission denied');
+        else if (name === 'NotFoundError') fail('No camera found');
+        else if (name === 'NotReadableError') fail('Camera is already in use');
+        else fail('Unable to access camera');
       }
-    };
+    }
 
-    startVideo();
+    start();
 
-    // Cleanup
     return () => {
-      if (videoElementRef.current) {
-        const stream = videoElementRef.current.srcObject as MediaStream;
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        videoElementRef.current.srcObject = null;
-      }
-
-      if (videoRef.current) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        videoRef.current.srcObject = null;
-      }
+      cancelled = true;
+      stream?.getTracks().forEach((t) => t.stop());
+      if (video) video.srcObject = null;
     };
-  }, [onError, videoRef]);
+  }, [ref]);
 
   return (
     <video
-      ref={videoElementRef}
+      ref={ref}
       autoPlay
       playsInline
       muted

@@ -1,74 +1,82 @@
-import { ReactNode } from 'react';
+import type { EmergencyScenario } from '../../data/emergencyScenarios';
 
 interface FirstAidCardProps {
-  scenario: {
-    id: string;
-    title: string;
-    description: string;
-    icon: string;
-    steps: {
-      id: string;
-      title: string;
-      instruction: string;
-      visualType: string;
-      audioText?: string;
-    }[];
-  };
+  scenario: EmergencyScenario;
   onSelect: () => void;
   className?: string;
 }
 
-export const FirstAidCard = ({ scenario, onSelect, className = '' }: FirstAidCardProps) => {
-  // Map icon names to actual icons (using Lucide React icon names)
-  const iconMap: Record<string, string> = {
-    'heart-pulse': 'HeartPulse',
-    'droplet': 'Droplet',
-    'fire': 'Fire',
-    'lungs': 'Lungs',
-  };
+const SEVERITY_STYLES: Record<EmergencyScenario['severity'], { bg: string; text: string; ring: string }> = {
+  CRITICAL: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-400', ring: 'ring-red-300 dark:ring-red-900/60' },
+  URGENT: { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-400', ring: 'ring-amber-300 dark:ring-amber-900/60' },
+  STABLE: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', ring: 'ring-blue-300 dark:ring-blue-900/60' },
+};
 
-  const IconComponent = iconMap[scenario.icon] || 'Activity'; // Default to Activity if icon not found
+const CATEGORY_EMOJI: Record<EmergencyScenario['category'], string> = {
+  'Critical Life Support': '❤️‍🩹',
+  'Trauma & Injury': '🩹',
+  'Environmental & Allergic': '🌡️',
+};
+
+export const FirstAidCard = ({ scenario, onSelect, className = '' }: FirstAidCardProps) => {
+  const sev = SEVERITY_STYLES[scenario.severity];
+
+  // Extract the light color base for the ribbon (e.g. bg-red-100 -> bg-red-500)
+  const ribColorMatch = sev.bg.match(/bg-([a-z]+)-100/);
+  const ribColor = ribColorMatch ? `bg-${ribColorMatch[1]}-500` : 'bg-gray-500';
 
   return (
     <div
       onClick={onSelect}
-      className={`bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer ${className}`}
+      className={`group relative bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-xl ring-1 ${sev.ring} transition-all cursor-pointer overflow-hidden ${className}`}
     >
-      <div className="flex items-start space-x-4">
-        {/* Icon placeholder */}
-        <div className="flex-shrink-0 mt-0.5">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            {/* In a real app, we'd import and use actual Lucide icons here */}
-            {/* For now, we'll use a simple text representation */}
-            <span className="text-blue-600 text-lg">{scenario.icon === 'heart-pulse' ? '❤' :
-                                                   scenario.icon === 'droplet' ? '💧' :
-                                                   scenario.icon === 'fire' ? '🔥' :
-                                                   scenario.icon === 'lungs' ? '🫁' : '⚡'}</span>
-          </div>
+      {/* Severity ribbon */}
+      <div className={`absolute top-0 left-0 right-0 h-1 ${ribColor}`} />
+
+      <div className="p-5 pt-4">
+        {/* Top row: category + severity */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase">
+            {CATEGORY_EMOJI[scenario.category]} {scenario.category}
+          </span>
+          <span className={`text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full ${sev.bg} ${sev.text}`}>
+            {scenario.severity}
+          </span>
         </div>
 
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">
-            {scenario.title}
-          </h3>
-          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-            {scenario.description}
-          </p>
-          <div className="mt-2">
-            <span className="px-3 py-1 bg-blue-50 text-blue-800 text-xs rounded-full">
-              {scenario.steps.length} steps
+        {/* Title */}
+        <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-1.5 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+          {scenario.title}
+        </h3>
+
+        {/* Overview */}
+        <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed mb-4 line-clamp-2">
+          {scenario.overview}
+        </p>
+
+        {/* Meta row */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[11px] font-semibold rounded-full">
+            {scenario.steps.length} Steps
+          </span>
+          <span className="px-2.5 py-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 text-[11px] font-medium rounded-full">
+            {scenario.estimatedTime}
+          </span>
+          {scenario.hasArGuide && (
+            <span className="px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-[11px] font-semibold rounded-full">
+              AR Guide
             </span>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Arrow indicator */}
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-xs text-gray-500">
-          Select to view guidance
+      {/* Quick-action footer */}
+      <div className="px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
+        <span className="text-xs font-semibold text-red-600 dark:text-red-400 tracking-wide">
+          ⚡ {scenario.quickActionBadge}
         </span>
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+        <svg className="w-4 h-4 text-gray-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
         </svg>
       </div>
     </div>

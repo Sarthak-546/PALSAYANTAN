@@ -1,209 +1,161 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { Button } from '../components/ui/Button';
-import { CameraViewport } from '../components/camera/CameraViewport';
 import { AROverlay } from '../components/ar/AROverlay';
 import { InstructionOverlay } from '../components/ar/InstructionOverlay';
 import { ProgressIndicator } from '../components/ar/ProgressIndicator';
-import { ChestTarget } from '../components/ar/ChestTarget';
-import { emergencyScenarios } from '../data/emergencyScenarios';
+import { SternumOverlay } from '../components/ar/SternumOverlay';
+import { AudioGuidance } from '../components/ar/AudioGuidance';
+import { useScenario } from '../hooks/useScenario';
+import { useElementSize, mapNormalizedToCover } from '../hooks/useElementSize';
+import { ROUTES } from '../routes';
+import { PoseDetectionCamera } from '../components/camera/PoseDetectionCamera';
+import { useCPRTracker } from '../utils/cprTracker';
+
+type Tracking = 'SEARCHING_FOR_TARGET' | 'LOCKED';
 
 export const ArFirstAid = () => {
-  const { scenario } = useParams<{ scenario: string }>();
   const navigate = useNavigate();
   const { demoMode, voiceGuidance, setVoiceGuidance } = useEmergencySession();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isGuidanceActive, setIsGuidanceActive] = useState(false);
-  const [trackingState, setTrackingState] = useState('SEARCHING_FOR_TARGET');
-  const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Find the current scenario
-  const currentScenario = emergencyScenarios.find(s => s.id === scenario) || emergencyScenarios[0];
-  const totalSteps = currentScenario?.steps.length || 0;
+  // Works for /ar-first-aid?type=cpr, /ar-first-aid/cpr, and bare /ar-first-aid (defaults to CPR)
+  const { scenario } = useScenario('cpr');
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [trackingState, setTrackingState] = useState<Tracking>('SEARCHING_FOR_TARGET');
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const size = useElementSize(containerRef);
+  const handleCameraError = useCallback((m: string) => setCameraError(m), []);
+
+  const { feedback: cprFeedback, updateTracker, resetTracker } = useCPRTracker();
+
+  const scenarioId = scenario?.id;
+  const totalSteps = scenario?.steps.length ?? 0;
 
   useEffect(() => {
-    // Start guidance when component mounts
-    setIsGuidanceActive(true);
+    setCurrentStep(0);
+  }, [scenarioId]);
 
-    // Simulate AR tracking
-    const trackingInterval = setInterval(() => {
-      if (trackingState === 'SEARCHING_FOR_TARGET') {
-        setTrackingState('LOCKED');
-      }
-    }, 2000);
+  // Simulated AR tracking: re-acquire the target on every step.
+  useEffect(() => {
+    setTrackingState('SEARCHING_FOR_TARGET');
+    const t = window.setTimeout(() => setTrackingState('LOCKED'), 1500);
+    return () => window.clearTimeout(t);
+  }, [scenarioId, currentStep]);
 
-    return () => {
-      clearInterval(trackingInterval);
-    };
-  }, []);
-
-  const handleNextStep = () => {
-    if (currentStep < totalSteps - 1) {
-      setCurrentStep(prev => prev + 1);
-      // Reset tracking state for next step
-      setTrackingState('SEARCHING_FOR_TARGET');
-
-      // Play audio guidance for next step if enabled
-      // Audio guidance functionality removed - AudioGuidance component deleted
-    } else {
-      // Guidance completed
-      setIsGuidanceActive(false);
-      navigate('/emergency-detected'); // Return to emergency screen or show completion
-    }
-  };
-
-  const handlePreviousStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-      setTrackingState('SEARCHING_FOR_TARGET');
-
-      // Play audio guidance for previous step if enabled
-      // Audio guidance functionality removed - AudioGuidance component deleted
-    }
-  };
-
-  const handleExitGuidance = () => {
-    navigate('/emergency-detected');
-  };
-
-  const handleToggleVoiceGuidance = () => {
-    setVoiceGuidance(!voiceGuidance);
-  };
-
-  if (!currentScenario) {
+  if (!scenario) {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-6 text-center">
         <h1 className="text-2xl font-bold text-red-400 mb-4">Scenario Not Found</h1>
         <p className="text-gray-300 mb-6">The requested emergency scenario could not be loaded.</p>
-        <Button onClick={() => navigate('/emergency-detected')} variant="outline">
-          Return to Emergency
+        <Button onClick={() => navigate(ROUTES.home)} variant="outline" className="bg-white">
+          Back to Home
         </Button>
       </div>
     );
   }
 
+  const step = scenario.steps[currentStep];
+  const isLast = currentStep === totalSteps - 1;
+  const target =
+    size.width > 0 ? mapNormalizedToCover(0.5, 0.4, size, videoRef.current) : null;
+
   return (
-    <div className="min-h-screen bg-gray-900">
-      <div className="relative">
-        {/* Camera Viewport */}
-        <div className="absolute inset-0">
-          <CameraViewport
-            videoRef={videoRef}
-            className="object-cover w-full h-full"
-          />
+    <div className="relative w-full overflow-hidden bg-gray-900" style={{ height: '100dvh' }}>
+      <AudioGuidance text={step.audioText ?? step.instruction} isActive={voiceGuidance} />
 
-          {/* AR Overlay */}
-          <AROverlay
-            trackingState={trackingState}
-            demoMode={demoMode}
-          />
-
-          {/* Chest Target */}
-          <ChestTarget
-            trackingState={trackingState}
-          />
-
-          {/* Directional Arrows (would be part of AROverlay in full implementation) */}
-          {trackingState === 'LOCKED' && (
-            <div className="absolute inset-0 pointer-events-none">
-              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-                {/* Animated arrows pointing to chest area */}
-                <path
-                  d="M50 20 L50 40"
-                  stroke="red"
-                  strokeWidth="2"
-                  fill="none"
-                  marker-end="url(#arrowhead)"
-                >
-                  <animateTransform
-                    attributeName="transform"
-                    type="translate"
-                    from="0 -10"
-                    to="0 10"
-                    dur="1.5s"
-                    repeatCount="indefinite"
-                  />
-                </path>
-                <path
-                  d="M50 60 L50 80"
-                  stroke="red"
-                  strokeWidth="2"
-                  fill="none"
-                  marker-end="url(#arrowhead)"
-                >
-                  <animateTransform
-                    attributeName="transform"
-                    type="translate"
-                    from="0 10"
-                    to="0 -10"
-                    dur="1.5s"
-                    repeatCount="indefinite"
-                  />
-                </path>
-                <defs>
-                  <marker id="arrowhead" markerWidth="10" markerHeight="7"
-                    refX="0" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="red" />
-                  </marker>
-                </defs>
-              </svg>
+      {/* CPR Feedback Display (only for CPR scenario) */}
+      {scenario.id === 'cpr' && trackingState === 'LOCKED' && (
+        <div className="absolute top-20 left-4 right-4 z-50 flex flex-col items-center gap-2 text-sm text-green-400">
+          {cprFeedback.compressionsPerMinute !== null && (
+            <div className="font-mono">
+              BPM: {cprFeedback.compressionsPerMinute}
+              {cprFeedback.compressionQuality === 'TOO_FAST' && ' ⚡'}
+              {cprFeedback.compressionQuality === 'TOO_SLOW' && ' 🐢'}
+              {cprFeedback.compressionQuality === 'INSUFFICIENT_RECOIL' && ' ↩️'}
+              {cprFeedback.compressionQuality === 'GOOD' && ' ✅'}
             </div>
           )}
-
-          {/* Instruction Overlay */}
-          <InstructionOverlay
-            step={currentStep + 1}
-            totalSteps={totalSteps}
-            instruction={currentScenario?.steps[currentStep]?.instruction || ''}
-            scenarioTitle={currentScenario.title}
-          />
-
-          {/* Progress Indicator */}
-          <ProgressIndicator
-            currentStep={currentStep + 1}
-            totalSteps={totalSteps}
-          />
+          {cprFeedback.elbowAngleFeedback === 'LOCK_ELBOWS' && (
+            <div>💪 Lock elbows</div>
+          )}
+          {cprFeedback.voiceFeedback && (
+            <div className="italic text-amber-300">
+              "{cprFeedback.voiceFeedback}"
+            </div>
+          )}
         </div>
+      )}
 
-        {/* Bottom Controls */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3">
-          {currentStep > 0 && (
-            <Button
-              variant="outline"
-              onClick={handlePreviousStep}
-              className="px-4 py-2"
-            >
-              PREVIOUS
-            </Button>
-          )}
-          {currentStep < totalSteps - 1 && (
-            <Button
-              variant="primary"
-              onClick={handleNextStep}
-              className="px-4 py-2"
-            >
-              NEXT
-            </Button>
-          )}
-          {!isGuidanceActive && (
-            <Button
-              variant="secondary"
-              onClick={handleExitGuidance}
-              className="px-4 py-2"
-            >
-              EXIT
-            </Button>
-          )}
-          <Button
-            variant={voiceGuidance ? 'outline' : 'secondary'}
-            onClick={handleToggleVoiceGuidance}
-            className="px-4 py-2"
-          >
-            {voiceGuidance ? 'VOICE ON' : 'VOICE OFF'}
+      {/* Camera + AR layer */}
+      <div ref={containerRef} className="absolute inset-0">
+        <PoseDetectionCamera
+          videoRef={videoRef}
+          onPoseDetected={updateTracker}
+          onError={handleCameraError}
+          className="absolute inset-0"
+        />
+        <AROverlay trackingState={trackingState} demoMode={demoMode} />
+
+        {scenario.id === 'cpr' && trackingState === 'LOCKED' && target && (
+          <SternumOverlay targetX={target.x} targetY={target.y} />
+        )}
+
+        <InstructionOverlay
+          step={currentStep + 1}
+          totalSteps={totalSteps}
+          instruction={step.instruction}
+          scenarioTitle={scenario.title}
+          className="!bottom-28"
+        />
+      </div>
+
+      {/* Top bar */}
+      <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+        <button onClick={() => navigate(ROUTES.home)} className="flex items-center space-x-2 text-gray-200 hover:text-white">
+          <ArrowLeft className="w-5 h-5" />
+          <span>Exit</span>
+        </button>
+        <ProgressIndicator currentStep={currentStep + 1} totalSteps={totalSteps} />
+      </div>
+
+      {cameraError && (
+        <div className="absolute top-16 left-4 right-4 z-50 rounded-lg bg-amber-900/80 border border-amber-500 p-3 text-sm text-amber-100">
+          {cameraError}. Step-by-step guidance still works.
+        </div>
+      )}
+
+      {/* Bottom controls */}
+      <div className="absolute bottom-0 left-0 right-0 z-50 flex justify-center gap-3 p-4 bg-gradient-to-t from-black/85 to-transparent">
+        {currentStep > 0 && (
+          <Button variant="outline" onClick={() => setCurrentStep((s) => s - 1)} className="px-4 bg-white">
+            PREVIOUS
           </Button>
-        </div>
+        )}
+        {isLast ? (
+          <Button variant="primary" onClick={() => navigate(ROUTES.home)} className="px-4">
+            FINISH
+          </Button>
+        ) : (
+          <Button variant="primary" onClick={() => setCurrentStep((s) => s + 1)} className="px-4">
+            NEXT
+          </Button>
+        )}
+        <Button
+          variant={voiceGuidance ? 'outline' : 'secondary'}
+          onClick={() => setVoiceGuidance(!voiceGuidance)}
+          className={`px-4 ${voiceGuidance ? 'bg-white' : ''}`}
+        >
+          {voiceGuidance ? 'VOICE ON' : 'VOICE OFF'}
+        </Button>
       </div>
     </div>
   );
 };
+
+export default ArFirstAid;

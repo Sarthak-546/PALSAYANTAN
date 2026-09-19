@@ -1,59 +1,133 @@
-import React, { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+// ── Indian emergency numbers ─────────────────────────────────────────────────
+const SOS_NUMBER = '112'; // National unified emergency (Police / Fire / Medical)
+const AMBULANCE_108 = '108'; // Emergency ambulance services
+const NATIONAL_112 = '112'; // National SOS
+
+type Fix = { lat: number; lon: number; at: number };
+
+/** Builds the pre-filled SOS text message. Exported so it can be unit-tested. */
+export const buildSosSmsUri = (fix?: { lat: number; lon: number } | null) => {
+  const body = fix
+    ? `EMERGENCY: Medical assistance required! Cardiac/Trauma patient. ` +
+      `Location: https://maps.google.com/?q=${fix.lat.toFixed(6)},${fix.lon.toFixed(6)} ` +
+      `(Lat: ${fix.lat.toFixed(6)}, Lng: ${fix.lon.toFixed(6)})`
+    : 'EMERGENCY: Immediate ambulance required! (GPS unavailable)';
+  // "?&body=" is the form both Android and iOS accept ("?body=" alone fails on iOS).
+  return `sms:${SOS_NUMBER}?&body=${encodeURIComponent(body)}`;
+};
+
+// Programmatic click on a detached-then-attached anchor: opens the SMS app or
+// phone dialer without touching the SPA (no reload) and works across browsers.
+const openExternal = (uri: string) => {
+  const a = document.createElement('a');
+  a.href = uri;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
+const FRESH_MS = 2 * 60 * 1000;
 
 export const EmergencyActionPanel = ({ onEmergencyDetected }: { onEmergencyDetected?: () => void }) => {
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [status, setStatus] = useState<'idle' | 'locating' | 'no-gps'>('idle');
+  const [gpsReady, setGpsReady] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const fixRef = useRef<Fix | null>(null);
 
-  const triggerEmergencySms = () => {
-    setIsGettingLocation(true);
-    setLocationError(null);
-
-    // Fallback if device has no GPS capability
+  // Warm up GPS on mount so coordinates are ready instantly at tap time.
+  // Browsers block sms: launches that happen seconds after the gesture,
+  // so holding a cached fix lets SOS open inside the user's original tap.
+  useEffect(() => {
     if (!navigator.geolocation) {
-      setLocationError('Geolocation not supported by browser.');
-      setIsGettingLocation(false);
-      if (onEmergencyDetected) onEmergencyDetected();
+      setStatus('no-gps');
       return;
     }
+    const id = navigator.geolocation.watchPosition(
+      (p) => {
+        fixRef.current = { lat: p.coords.latitude, lon: p.coords.longitude, at: Date.now() };
+        setGpsReady(true);
+      },
+      (e) => setMessage(e.code === 1 ? 'Location permission denied — SMS will be sent without coordinates.' : null),
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 },
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, []);
 
+  const send = (fix: Fix | null) => {
+    openExternal(buildSosSmsUri(fix));
+    setStatus('idle');
+    onEmergencyDetected?.();
+  };
+
+  const triggerEmergencySms = () => {
+    setMessage(null);
+    const cached = fixRef.current;
+    if (cached && Date.now() - cached.at < FRESH_MS) return send(cached); // instant path
+
+    if (!navigator.geolocation) {
+      setMessage('GPS not available — opening SMS without coordinates.');
+      return send(null);
+    }
+    setStatus('locating');
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        
-        // Format the offline SMS trigger
-        const smsBody = `Medical Emergency at ${lat.toFixed(6)},${lon.toFixed(6)}`;
-        const smsUri = `sms:112?body=${encodeURIComponent(smsBody)}`;
-        
-        // Launch the native SMS app
-        window.location.href = smsUri;
-        
-        setIsGettingLocation(false);
-        if (onEmergencyDetected) onEmergencyDetected();
+      (p) => send({ lat: p.coords.latitude, lon: p.coords.longitude, at: Date.now() }),
+      () => {
+        setMessage('Could not get a GPS lock — opening SMS without coordinates.');
+        send(null); // never leave the user stuck: SOS goes out with or without GPS
       },
-      (error) => {
-        setLocationError(error.message || 'Unable to get GPS lock');
-        setIsGettingLocation(false);
-        if (onEmergencyDetected) onEmergencyDetected();
-      },
-      { timeout: 10000, maximumAge: 0, enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
     );
   };
 
+  // Format GPS status badge
+  const gpsLabel = gpsReady && fixRef.current
+    ? `● GPS Locked: ${fixRef.current.lat.toFixed(2)}° N, ${fixRef.current.lon.toFixed(2)}° E`
+    : status === 'no-gps'
+      ? '○ GPS unavailable'
+      : '◌ Acquiring Satellite Fix…';
+
   return (
-    <div className="space-y-4">
-      {locationError && (
-        <div className="p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm">
-          {locationError}
+    <div className="space-y-2.5">
+      {/* Warning / info banner */}
+      {message && (
+        <div className="p-2 bg-amber-950/60 border border-amber-500/40 rounded-xl text-amber-100 text-[11px] backdrop-blur">
+          {message}
         </div>
       )}
-      <button 
+
+      {/* Primary SOS button — always tappable, never locked */}
+      <button
         onClick={triggerEmergencySms}
-        disabled={isGettingLocation}
-        className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all flex items-center justify-center disabled:opacity-50"
+        className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl shadow-lg shadow-red-600/30 active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
       >
-        <span>{isGettingLocation ? 'Acquiring GPS...' : 'SOS - Share Location & Alert 112'}</span>
+        {status === 'locating' ? '📡 Acquiring GPS…' : '🚨 SOS — Alert 112 & Share Location'}
       </button>
+
+      {/* Quick-call pills (side-by-side) */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => openExternal(`tel:${AMBULANCE_108}`)}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold rounded-xl transition-colors active:scale-95"
+        >
+          📞 Call 108
+          <span className="text-[10px] text-slate-400">(Ambulance)</span>
+        </button>
+        <button
+          onClick={() => openExternal(`tel:${NATIONAL_112}`)}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold rounded-xl transition-colors active:scale-95"
+        >
+          📞 Call 112
+          <span className="text-[10px] text-slate-400">(National SOS)</span>
+        </button>
+      </div>
+
+      {/* GPS status badge */}
+      <div className="text-center text-[11px] text-slate-400 px-1">
+        {gpsLabel}
+      </div>
     </div>
   );
 };

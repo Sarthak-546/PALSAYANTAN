@@ -1,140 +1,124 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Search, Volume2, VolumeX } from 'lucide-react';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
-import { Button } from '../components/ui/Button';
 import { FirstAidCard } from '../components/first-aid/FirstAidCard';
 import { emergencyScenarios } from '../data/emergencyScenarios';
+import type { EmergencyScenario } from '../data/emergencyScenarios';
+import { ROUTES, firstAidDetailPath } from '../routes';
+
+const CATEGORIES: Array<EmergencyScenario['category']> = [
+  'Critical Life Support',
+  'Trauma & Injury',
+  'Environmental & Allergic',
+];
 
 export const FirstAidLibrary = () => {
   const navigate = useNavigate();
   const { voiceGuidance, setVoiceGuidance } = useEmergencySession();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<EmergencyScenario['category'] | null>(null);
 
-  // Filter scenarios based on search and category
-  const filteredScenarios = emergencyScenarios.filter(scenario => {
-    const matchesSearch = scenario.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         scenario.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-    if (!activeCategory) return matchesSearch;
-
-    // For demo purposes, we'll categorize by ID prefix or content
-    // In a real app, each scenario would have an explicit category property
-    const categoryMatch =
-      (activeCategory === 'CPR' && scenario.id === 'cpr') ||
-      (activeCategory === 'BLEEDING' && scenario.id === 'bleeding') ||
-      (activeCategory === 'BURNS' && scenario.id === 'burns') ||
-      (activeCategory === 'CHOKING' && scenario.id === 'choking');
-
-    return (!activeCategory || categoryMatch) && matchesSearch;
+  const filteredScenarios = emergencyScenarios.filter((s) => {
+    const matchesSearch =
+      !searchTerm ||
+      s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.overview.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !activeCategory || s.category === activeCategory;
+    return matchesSearch && matchesCategory;
   });
 
-  const handleScenarioSelect = (scenarioId: string) => {
-    navigate(`/first-aid/${scenarioId}`);
-  };
-
-  const handleVoiceGuidanceToggle = () => {
-    setVoiceGuidance(!voiceGuidance);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
-            FIRST AID ASSISTANT
-          </h1>
-          <Button
-            variant={voiceGuidance ? 'outline' : 'secondary'}
-            size="medium"
-            onClick={handleVoiceGuidanceToggle}
-            className="text-sm"
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors">
+      {/* Sticky header */}
+      <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 shadow-sm transition-colors">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => navigate(ROUTES.home)}
+            className="flex items-center gap-1.5 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
           >
-            {voiceGuidance ? 'VOICE ON' : 'VOICE OFF'}
-          </Button>
+            <ArrowLeft className="h-4 w-4" />
+            Home
+          </button>
+
+          <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-slate-50 tracking-tight">
+            First Aid Library
+          </h1>
+
+          <button
+            onClick={() => setVoiceGuidance(!voiceGuidance)}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+              voiceGuidance
+                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400'
+            }`}
+          >
+            {voiceGuidance ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{voiceGuidance ? 'Voice On' : 'Voice Off'}</span>
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 pt-5 pb-10">
+        {/* Search bar */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-slate-500" />
+          <input
+            type="text"
+            placeholder="Search emergencies…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 transition-colors"
+          />
         </div>
 
-        {/* Search and Categories */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search emergency procedure..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        {/* Category chips */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setActiveCategory(null)}
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+              activeCategory === null
+                ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+            }`}
+          >
+            All
+          </button>
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+                activeCategory === cat
+                  ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Results */}
+        {filteredScenarios.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-gray-400 dark:text-slate-500 text-sm">No scenarios match your search. Try adjusting your filters.</p>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant={activeCategory === null ? 'outline' : 'secondary'}
-              onClick={() => setActiveCategory(null)}
-              className="px-4 py-2"
-            >
-              ALL
-            </Button>
-            <Button
-              variant={activeCategory === 'CPR' ? 'outline' : 'secondary'}
-              onClick={() => setActiveCategory('CPR')}
-              className="px-4 py-2"
-            >
-              CPR
-            </Button>
-            <Button
-              variant={activeCategory === 'BLEEDING' ? 'outline' : 'secondary'}
-              onClick={() => setActiveCategory('BLEEDING')}
-              className="px-4 py-2"
-            >
-              BLEEDING
-            </Button>
-            <Button
-              variant={activeCategory === 'BURNS' ? 'outline' : 'secondary'}
-              onClick={() => setActiveCategory('BURNS')}
-              className="px-4 py-2"
-            >
-              BURNS
-            </Button>
-            <Button
-              variant={activeCategory === 'CHOKING' ? 'outline' : 'secondary'}
-              onClick={() => setActiveCategory('CHOKING')}
-              className="px-4 py-2"
-            >
-              CHOKING
-            </Button>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {filteredScenarios.map((scenario) => (
+              <FirstAidCard
+                key={scenario.id}
+                scenario={scenario}
+                onSelect={() => navigate(firstAidDetailPath(scenario.id))}
+              />
+            ))}
           </div>
-        </div>
-
-        {/* Scenario Cards */}
-        <div className="space-y-4">
-          {filteredScenarios.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">
-                No scenarios match your search. Try adjusting your filters.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-6">
-              {filteredScenarios.map(scenario => (
-                <FirstAidCard
-                  key={scenario.id}
-                  scenario={scenario}
-                  onSelect={() => handleScenarioSelect(scenario.id)}
-                />
-              ))}
-
-              {/* Make it responsive - 1 column on mobile, 2 on tablet, 3+ on desktop */}
-              <div className="hidden sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredScenarios.slice(0, 3).map(scenario => (
-                  <div key={scenario.id} className="opacity-0">
-                    {/* Spacer for grid alignment */}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        )}
+      </main>
     </div>
   );
 };
+
+export default FirstAidLibrary;

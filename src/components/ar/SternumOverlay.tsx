@@ -7,62 +7,73 @@ interface SternumOverlayProps {
 
 export const SternumOverlay: React.FC<SternumOverlayProps> = ({ targetX, targetY }) => {
   useEffect(() => {
-    // Insert styles for pulse animation and arrow only once
-    if (!document.getElementById('sternum-overlay-styles')) {
+    // Inject strictly scoped keyframes to prevent overriding Tailwind defaults
+    if (!document.getElementById('cpr-hand-styles')) {
       const style = document.createElement('style');
-      style.id = 'sternum-overlay-styles';
+      style.id = 'cpr-hand-styles';
+      // 110 BPM = ~0.545 seconds per beat cycle
       style.textContent = `
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 0.8; }
-          50% { transform: scale(1.4); opacity: 0.4; }
-          100% { transform: scale(1); opacity: 0.8; }
+        @keyframes cprPump {
+          0%, 100% { transform: translate(-50%, -50%) scale(1) translateY(0); }
+          50% { transform: translate(-50%, -50%) scale(0.92) translateY(18px); }
         }
-        @keyframes bounceDown {
-          0%, 100% { transform: translate(-50%, 0); }
-          50% { transform: translate(-50%, 8px); }
-        }
-        .sternum-overlay-circle {
-          width: 24px;
-          height: 24px;
-          background-color: #ff0000;
-          border-radius: 50%;
-          position: absolute;
-          animation: pulse 1.5s ease-in-out infinite;
-          box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
-        }
-        .sternum-overlay-arrow {
-          width: 0;
-          height: 0;
-          border-left: 10px solid transparent;
-          border-right: 10px solid transparent;
-          border-top: 16px solid #ff0000;
-          position: absolute;
-          top: 32px; /* positions arrow below the circle */
-          left: 50%;
-          transform: translateX(-50%);
-          animation: bounceDown 1.5s ease-in-out infinite;
-          filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));
+        @keyframes expandRing {
+          0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; border-width: 6px; }
+          100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; border-width: 1px; }
         }
       `;
       document.head.appendChild(style);
     }
   }, []);
 
-  // Prevent rendering at 0,0 if coordinates haven't populated yet
+  // Prevent rendering at 0,0 if computer vision coordinates haven't populated yet
   if (!targetX || !targetY || isNaN(targetX) || isNaN(targetY)) return null;
 
   return (
     <div
+      className="pointer-events-none absolute z-50"
       style={{
-        position: 'absolute',
-        left: targetX - 12, // adjust to center the 24px circle
-        top: targetY - 12,  
-        pointerEvents: 'none', 
-        zIndex: 50 
+        left: targetX,
+        top: targetY,
+        width: 112,
+        height: 112,
+        transform: 'translate(-50%, -50%)',
       }}
     >
-      <div className="sternum-overlay-circle" />
-      <div className="sternum-overlay-arrow" />
+      {/* Visual Metronome Ring synced to 110 BPM */}
+      <div 
+        className="absolute left-1/2 top-1/2 rounded-full border-red-500"
+        style={{
+          width: '100px',
+          height: '100px',
+          animation: 'expandRing 0.545s infinite cubic-bezier(0.1, 0.0, 0.3, 1)'
+        }} 
+      />
+
+      {/* Animated CPR Hand Image */}
+      <div
+        className="absolute left-1/2 top-1/2"
+        style={{
+          animation: 'cprPump 0.545s infinite ease-in-out',
+        }}
+      >
+        <img
+          src="/images/hand.png"
+          alt="CPR Hand Placement"
+          className="w-24 h-24 object-contain pointer-events-none drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]"
+          onError={(e) => {
+            // Fallback in case the image is at root /hand.png instead of /images/hand.png
+            (e.currentTarget as HTMLImageElement).src = '/hand.png';
+          }}
+        />
+      </div>
+      
+      {/* High-visibility Action Badge */}
+      <div 
+        className="absolute top-full left-1/2 mt-3 -translate-x-1/2 whitespace-nowrap rounded-full bg-red-600 px-4 py-1.5 text-[11px] font-black tracking-widest text-white shadow-lg border border-red-400"
+      >
+        PUSH TO BEAT
+      </div>
     </div>
   );
 };
