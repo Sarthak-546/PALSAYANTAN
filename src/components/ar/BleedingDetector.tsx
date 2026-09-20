@@ -46,10 +46,14 @@ export const BleedingDetector = ({ videoRef, onWoundStatus }: BleedingDetectorPr
         const g = data[i + 1];
         const b = data[i + 2];
 
-        // Relaxed filter for digital screen emission and glare
-        const isBloodPixel = r >= 90 && g <= 90 && b <= 90 && (r / (g + b + 1) > 1.5) && (r - g > 30);
+        // High-sensitivity red detector: accepts any saturated red substance
+        const isRedPixel =
+          r > 100 &&
+          r > g * 1.35 &&
+          r > b * 1.35 &&
+          (r - Math.max(g, b) > 35);
 
-        if (isBloodPixel) {
+        if (isRedPixel) {
           sumX += x;
           sumY += y;
           count++;
