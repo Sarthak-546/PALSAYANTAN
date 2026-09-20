@@ -1,7 +1,6 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const Pose = (window as any).Pose;
-const Camera = (window as any).Camera;
 
 const POSE_LANDMARKS = {
   LEFT_SHOULDER: 11,
@@ -13,7 +12,7 @@ const POSE_LANDMARKS = {
 };
 
 interface PoseDetectionCameraProps {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   onPoseDetected: (poseData: {
     sternum: { x: number; y: number } | null;
     leftWrist: { x: number; y: number } | null;
@@ -25,35 +24,77 @@ interface PoseDetectionCameraProps {
   } | null) => void;
   onError: (error: string) => void;
   className?: string;
+  facingMode?: 'environment' | 'user';
 }
 
 export const PoseDetectionCamera = ({
   videoRef,
   onPoseDetected,
   onError,
-  className = ''
+  className = '',
+  facingMode = 'environment'
 }: PoseDetectionCameraProps) => {
-  const cameraRef = useRef<any>(null);
   const poseRef = useRef<any>(null);
 
+  // 1. Robust manual camera initialization
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) {
-      onError('Video element not found');
+    let cancelled = false;
+    let activeStream: MediaStream | null = null;
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode }
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        activeStream = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+        if (err.name === 'NotAllowedError') onError('Camera permission denied');
+        else onError(err.message || 'Camera access error');
+      }
+    }
+    startCamera();
+
+    return () => {
+      cancelled = true;
+      if (activeStream) {
+        activeStream.getTracks().forEach((track) => track.stop());
+      } else if (videoRef.current?.srcObject) {
+         // Fallback just in case
+         const stream = videoRef.current.srcObject as MediaStream;
+         stream.getTracks().forEach((t) => t.stop());
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [facingMode, onError, videoRef]);
+
+  // 2. Pose tracking via raw requestAnimationFrame (avoids MediaPipe Camera crashes)
+  useEffect(() => {
+    if (typeof Pose !== 'function') {
+      onError('Pose tracking is unavailable (MediaPipe script not loaded).');
       return;
     }
 
+    let isSubscribed = true;
+    let animFrameId = 0;
+
     try {
-      // Initialize Pose
       const pose = new Pose({
-        locateFile: (file: string) => {
-          return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-        }
+        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
       });
       poseRef.current = pose;
 
       pose.setOptions({
-        selfieMode: false,
+        selfieMode: facingMode === 'user',
         upperBodyOnly: true,
         smoothLandmarks: true,
         minDetectionConfidence: 0.5,
@@ -61,6 +102,7 @@ export const PoseDetectionCamera = ({
       });
 
       pose.onResults((results: any) => {
+        if (!isSubscribed) return;
         if (results.poseLandmarks) {
           const leftShoulder = results.poseLandmarks[POSE_LANDMARKS.LEFT_SHOULDER];
           const rightShoulder = results.poseLandmarks[POSE_LANDMARKS.RIGHT_SHOULDER];
@@ -72,48 +114,59 @@ export const PoseDetectionCamera = ({
           let sternum = null;
           if (leftShoulder && rightShoulder) {
             const x = (leftShoulder.x + rightShoulder.x) / 2;
-            const y = (leftShoulder.y + rightShoulder.y) / 2 + 0.05; // offset downwards slightly
+            const y = (leftShoulder.y + rightShoulder.y) / 2 + 0.05;
             sternum = { x, y };
           }
 
           onPoseDetected({
             sternum,
-            leftWrist: leftWrist ? { x: leftWrist.x, y: leftWrist.y } : null,
-            rightWrist: rightWrist ? { x: rightWrist.x, y: rightWrist.y } : null,
-            leftElbow: leftElbow ? { x: leftElbow.x, y: leftElbow.y } : null,
-            rightElbow: rightElbow ? { x: rightElbow.x, y: rightElbow.y } : null,
-            leftShoulder: leftShoulder ? { x: leftShoulder.x, y: leftShoulder.y } : null,
-            rightShoulder: rightShoulder ? { x: rightShoulder.x, y: rightShoulder.y } : null
-          });
+            leftWrist: leftWrist ? { x: leftWrist.x, y: leftWrist.y } : undefined,
+            rightWrist: rightWrist ? { x: rightWrist.x, y: rightWrist.y } : undefined,
+            leftElbow: leftElbow ? { x: leftElbow.x, y: leftElbow.y } : undefined,
+            rightElbow: rightElbow ? { x: rightElbow.x, y: rightElbow.y } : undefined,
+            leftShoulder: leftShoulder ? { x: leftShoulder.x, y: leftShoulder.y } : undefined,
+            rightShoulder: rightShoulder ? { x: rightShoulder.x, y: rightShoulder.y } : undefined
+          } as any);
         } else {
           onPoseDetected(null);
         }
       });
 
-      // Initialize Camera
-      const camera = new Camera(video, {
-        onFrame: async () => {
-          if (poseRef.current) {
-            await poseRef.current.send({ image: video });
-          }
-        },
-        width: 1280,
-        height: 720
-      });
-      cameraRef.current = camera;
-      camera.start();
     } catch (err: any) {
       onError(err?.message || 'Failed to initialize pose detection');
+      return;
     }
 
-    // Cleanup
-    return () => {
-      if (cameraRef.current) {
-        cameraRef.current.stop();
+    let busy = false;
+    const processFrame = async () => {
+      if (!isSubscribed) return;
+      const video = videoRef.current;
+      if (!busy && video && video.readyState >= 2 && !video.paused) {
+        busy = true;
+        try {
+          await poseRef.current.send({ image: video });
+        } catch (err) {
+          console.error('Pose frame error:', err);
+        } finally {
+          busy = false;
+        }
       }
-      poseRef.current = null;
+      if (isSubscribed) {
+        animFrameId = requestAnimationFrame(processFrame);
+      }
     };
-  }, [videoRef, onPoseDetected, onError]);
+    processFrame();
+
+    return () => {
+      isSubscribed = false;
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      try {
+        poseRef.current?.close?.();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, [facingMode, onPoseDetected, onError, videoRef]);
 
   return (
     <video
@@ -121,7 +174,7 @@ export const PoseDetectionCamera = ({
       autoPlay
       playsInline
       muted
-      className={`object-cover w-full h-full ${className}`}
+      className={`object-cover w-full h-full ${facingMode === 'user' ? '-scale-x-100' : ''} ${className}`}
     />
   );
 };
