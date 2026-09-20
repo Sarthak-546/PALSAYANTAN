@@ -5,9 +5,10 @@ interface CameraViewportProps {
   videoRef?: RefObject<HTMLVideoElement | null>;
   onError?: (message: string) => void;
   className?: string;
+  facingMode?: 'environment' | 'user';
 }
 
-export const CameraViewport = ({ videoRef, onError, className = '' }: CameraViewportProps) => {
+export const CameraViewport = ({ videoRef, onError, className = '', facingMode = 'environment' }: CameraViewportProps) => {
   const localRef = useRef<HTMLVideoElement | null>(null);
   const ref = videoRef ?? localRef;
 
@@ -36,7 +37,7 @@ export const CameraViewport = ({ videoRef, onError, className = '' }: CameraView
       }
       try {
         const s = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false,
         });
         // Unmounted (or React StrictMode re-mounted) while the permission prompt was open:
@@ -66,7 +67,7 @@ export const CameraViewport = ({ videoRef, onError, className = '' }: CameraView
       stream?.getTracks().forEach((t) => t.stop());
       if (video) video.srcObject = null;
     };
-  }, [ref]);
+  }, [ref, facingMode]);
 
   return (
     <video
@@ -74,7 +75,7 @@ export const CameraViewport = ({ videoRef, onError, className = '' }: CameraView
       autoPlay
       playsInline
       muted
-      className={`object-cover w-full h-full ${className}`}
+      className={`object-cover w-full h-full ${facingMode === 'user' ? '-scale-x-100' : ''} ${className}`}
     />
   );
 };

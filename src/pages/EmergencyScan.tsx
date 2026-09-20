@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Activity, AlertTriangle, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowLeft, ShieldAlert, RefreshCcw } from 'lucide-react';
 import { CameraViewport } from '../components/camera/CameraViewport';
 import { SternumOverlay } from '../components/ar/SternumOverlay';
 import { ScanOverlay } from '../components/ar/ScanOverlay';
@@ -70,6 +70,7 @@ export const EmergencyScan = () => {
       : 'none';
 
   const [activeEmergency, setActiveEmergency] = useState<Emergency>(initialProtocol);
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [chokingPhase, setChokingPhase] = useState<ChokingPhase>('back-blows');
   const [sternumPoint, setSternumPoint] = useState<{ x: number; y: number } | null>(null);
   const [woundPoint, setWoundPoint] = useState<{ x: number; y: number } | null>(null);
@@ -121,7 +122,7 @@ export const EmergencyScan = () => {
       });
 
       pose.setOptions({
-        selfieMode: false,
+        selfieMode: facingMode === 'user',
         modelComplexity: 1,
         smoothLandmarks: true,
         minDetectionConfidence: 0.5,
@@ -178,7 +179,7 @@ export const EmergencyScan = () => {
         /* ignore */
       }
     };
-  }, [activeEmergency]);
+  }, [activeEmergency, facingMode]);
 
   // Force-reload the choking demo video when the phase changes
   useEffect(() => {
@@ -239,6 +240,7 @@ export const EmergencyScan = () => {
           <CameraViewport
             videoRef={videoRef}
             onError={handleCameraError}
+            facingMode={facingMode}
             className="w-full h-full object-cover"
           />
           <ScanOverlay isScanning={isScanning} scanProgress={scanProgress} />
@@ -248,7 +250,7 @@ export const EmergencyScan = () => {
           )}
 
           {activeEmergency === 'bleeding' && woundPoint && (
-            <SternumOverlay targetX={woundPoint.x} targetY={woundPoint.y} />
+            <SternumOverlay targetX={woundPoint.x} targetY={woundPoint.y} mode="bleeding" />
           )}
         </div>
       ) : activeEmergency === 'choking' ? (
@@ -345,7 +347,7 @@ export const EmergencyScan = () => {
 
       {/* ── Floating HUD Top Bar ── */}
       <div className="absolute top-4 inset-x-4 z-40 flex items-center justify-between pointer-events-none">
-        <div className="flex gap-2 pointer-events-auto">
+        <div className="flex gap-2 pointer-events-auto items-center">
           <button
             onClick={() => navigate(ROUTES.home)}
             className="flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-full px-4 py-1.5 text-xs font-semibold hover:bg-slate-900/90 transition-colors shadow-sm text-[13px]"
@@ -353,6 +355,17 @@ export const EmergencyScan = () => {
             <ArrowLeft className="h-4 w-4" />
             Exit
           </button>
+
+          {activeEmergency !== 'choking' && activeEmergency !== 'burns' && (
+            <button
+              onClick={() => setFacingMode(prev => prev === 'environment' ? 'user' : 'environment')}
+              className="flex items-center justify-center p-2 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10 text-white hover:bg-slate-900/90 transition-colors shadow-sm"
+              title="Flip Camera"
+            >
+              <RefreshCcw className="w-4 h-4" />
+            </button>
+          )}
+
           <ThemeToggle variant="glass" />
         </div>
 
