@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface CPRMetronomeProps {
   /** When true the 110 BPM click track plays via the Web Audio API. */
@@ -27,14 +27,26 @@ function scheduleTick(ctx: AudioContext, when: number) {
 /**
  * Browser-native 110 BPM metronome using the Web Audio API.
  * Runs entirely offline — no external audio files required.
- * Renders nothing visible; pair with the SternumOverlay cprPump animation.
+ * Syncs with the hardware vibration motor via navigator.vibrate.
  */
 export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
   const ctxRef = useRef<AudioContext | null>(null);
   const intervalRef = useRef<number>(0);
+  const [hasVibrate, setHasVibrate] = useState(false);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      setHasVibrate(true);
+    }
+
+    if (!isActive) {
+      if (hasVibrate && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(0);
+        } catch {}
+      }
+      return;
+    }
 
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     ctxRef.current = ctx;
@@ -45,11 +57,19 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
     document.addEventListener('click', resume, { once: true });
     document.addEventListener('touchstart', resume, { once: true });
 
-    // Schedule the first tick immediately, then repeat at 110 BPM.
-    scheduleTick(ctx, ctx.currentTime);
-    intervalRef.current = window.setInterval(() => {
+    // Helper to run audio tick + tactile physical haptic buzz
+    const triggerBeat = () => {
       scheduleTick(ctx, ctx.currentTime);
-    }, INTERVAL_MS);
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(80);
+        } catch {}
+      }
+    };
+
+    // Schedule the first tick immediately, then repeat at 110 BPM.
+    triggerBeat();
+    intervalRef.current = window.setInterval(triggerBeat, INTERVAL_MS);
 
     return () => {
       window.clearInterval(intervalRef.current);
@@ -57,11 +77,24 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
       document.removeEventListener('touchstart', resume);
       ctx.close().catch(() => {});
       ctxRef.current = null;
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(0);
+        } catch {}
+      }
     };
-  }, [isActive]);
+  }, [isActive, hasVibrate]);
 
-  // Audio-only component — no DOM output.
-  return null;
+  if (!isActive || !hasVibrate) return null;
+
+  return (
+    <div className="absolute top-28 inset-x-4 max-w-sm mx-auto z-40 pointer-events-none flex justify-center">
+      <span className="text-[10px] sm:text-[11px] font-mono tracking-wider font-bold text-emerald-400 bg-emerald-950/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-500/30 shadow-lg flex items-center">
+        <span className="mr-1.5 text-base leading-none">📳</span>
+        Haptic Pulse Active
+      </span>
+    </div>
+  );
 };
 
 export default CPRMetronome;
