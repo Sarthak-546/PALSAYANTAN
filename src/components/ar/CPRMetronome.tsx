@@ -33,6 +33,7 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
   const ctxRef = useRef<AudioContext | null>(null);
   const intervalRef = useRef<number>(0);
   const [hasVibrate, setHasVibrate] = useState(false);
+  const [pacingEnabled, setPacingEnabled] = useState(false);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
@@ -40,6 +41,7 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
     }
 
     if (!isActive) {
+      setPacingEnabled(false);
       if (hasVibrate && 'vibrate' in navigator) {
         try {
           navigator.vibrate(0);
@@ -48,16 +50,16 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
       return;
     }
 
+    if (!pacingEnabled) return;
+
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     ctxRef.current = ctx;
 
-    // Browsers suspend AudioContext until a user gesture; resume defensively.
     const resume = () => { ctx.state === 'suspended' && ctx.resume(); };
     resume();
     document.addEventListener('click', resume, { once: true });
     document.addEventListener('touchstart', resume, { once: true });
 
-    // Helper to run audio tick + tactile physical haptic buzz
     const triggerBeat = () => {
       scheduleTick(ctx, ctx.currentTime);
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
@@ -67,7 +69,6 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
       }
     };
 
-    // Schedule the first tick immediately, then repeat at 110 BPM.
     triggerBeat();
     intervalRef.current = window.setInterval(triggerBeat, INTERVAL_MS);
 
@@ -83,9 +84,27 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
         } catch {}
       }
     };
-  }, [isActive, hasVibrate]);
+  }, [isActive, pacingEnabled, hasVibrate]);
 
   if (!isActive || !hasVibrate) return null;
+
+  if (!pacingEnabled) {
+    return (
+      <div className="absolute top-28 inset-x-4 max-w-sm mx-auto z-40 pointer-events-auto flex justify-center">
+        <button
+          onClick={() => {
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              try { navigator.vibrate(80); } catch {}
+            }
+            setPacingEnabled(true);
+          }}
+          className="px-5 py-2.5 bg-red-600 hover:bg-red-500 rounded-full text-white font-bold shadow-[0_0_15px_rgba(220,38,38,0.6)] border border-red-400 active:scale-95 transition-transform"
+        >
+          Start CPR Pacing
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute top-28 inset-x-4 max-w-sm mx-auto z-40 pointer-events-none flex justify-center">

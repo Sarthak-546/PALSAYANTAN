@@ -60,6 +60,8 @@ export const EmergencyScan = () => {
   const { voiceGuidance } = useEmergencySession();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
   // Ref for the choking demo video so we can force-reload when src changes
   const chokingVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -80,6 +82,28 @@ export const EmergencyScan = () => {
   const [scanProgress, setScanProgress] = useState(0);
 
   const handleCameraError = useCallback((msg: string) => setCameraError(msg), []);
+
+  const stopCamera = useCallback(() => {
+    if (!streamRef.current && videoRef.current?.srcObject) {
+      streamRef.current = videoRef.current.srcObject as MediaStream;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    } else if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
 
   // Intro scanning sweep (~2 s)
   useEffect(() => {
@@ -144,7 +168,10 @@ export const EmergencyScan = () => {
         const midX = (left.x + right.x) / 2;
         const shoulderWidth = Math.hypot(left.x - right.x, left.y - right.y);
         const midY = (left.y + right.y) / 2 + shoulderWidth * 0.45;
-        setSternumPoint(normalizedToPixels(midX, midY, video));
+
+        const cw = video.clientWidth || window.innerWidth;
+        const ch = video.clientHeight || window.innerHeight;
+        setSternumPoint({ x: midX * cw, y: midY * ch });
       });
     } catch (err) {
       console.error('Failed to initialise pose detection:', err);
@@ -360,7 +387,10 @@ export const EmergencyScan = () => {
       <div className="absolute top-4 inset-x-4 z-40 flex items-center justify-between pointer-events-none">
         <div className="flex gap-2 pointer-events-auto items-center">
           <button
-            onClick={() => navigate(ROUTES.home)}
+            onClick={() => {
+              stopCamera();
+              navigate(ROUTES.home);
+            }}
             className="flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-full px-4 py-1.5 text-xs font-semibold hover:bg-slate-900/90 transition-colors shadow-sm text-[13px]"
           >
             <ArrowLeft className="h-4 w-4" />
