@@ -31,7 +31,9 @@ const openExternal = (uri: string) => {
 
 const FRESH_MS = 2 * 60 * 1000;
 
-export const EmergencyActionPanel = ({ onEmergencyDetected }: { onEmergencyDetected?: () => void }) => {
+const MATERNITY_102 = '102'; // Maternity transport
+
+export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy }: { onEmergencyDetected?: () => void, isPregnancy?: boolean }) => {
   const [status, setStatus] = useState<'idle' | 'locating' | 'no-gps'>('idle');
   const [gpsReady, setGpsReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -107,7 +109,7 @@ export const EmergencyActionPanel = ({ onEmergencyDetected }: { onEmergencyDetec
       </button>
 
       {/* Quick-call pills (side-by-side) */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => openExternal(`tel:${AMBULANCE_108}`)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold rounded-xl transition-colors active:scale-95"
@@ -122,6 +124,15 @@ export const EmergencyActionPanel = ({ onEmergencyDetected }: { onEmergencyDetec
           📞 Call 112
           <span className="text-[10px] text-slate-400">(National SOS)</span>
         </button>
+        {isPregnancy && (
+          <button
+            onClick={() => openExternal(`tel:${MATERNITY_102}`)}
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-fuchsia-600/20 hover:bg-fuchsia-600/30 border border-fuchsia-500/30 text-fuchsia-100 text-xs font-semibold rounded-xl transition-colors active:scale-95 mt-1"
+          >
+            📞 Call 102
+            <span className="text-[10px] text-fuchsia-300">(Maternity Transport)</span>
+          </button>
+        )}
       </div>
 
       {/* GPS status badge */}

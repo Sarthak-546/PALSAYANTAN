@@ -250,5 +250,46 @@ export const emergencyScenarios: EmergencyScenario[] = [
       'Don\'t burst blisters',
       'Don\'t remove clothing that is stuck to the burn'
     ]
+  },
+  {
+    id: "pregnancy",
+    title: 'Pregnancy Emergency',
+    category: 'Medical',
+    severity: 'CRITICAL',
+    estimatedTime: '~20 min until EMS',
+    overview: 'Protocols for maternal cardiac arrest (requiring Left Uterine Displacement) and unconsciousness (Left Lateral Recovery Position) to protect both mother and fetus.',
+    quickActionBadge: 'Left Lateral Displacement',
+    hasArGuide: true,
+    arRoute: '/emergency-scan?protocol=pregnancy-cpr',
+    steps: [
+      {
+        stepNumber: 1,
+        instruction: 'Check Responsiveness',
+        detail: 'Tap the person on the shoulders and shout "Are you okay?" Look for normal breathing.',
+        audioText: 'Tap the shoulders and shout: Are you okay? Look for normal breathing.',
+      },
+      {
+        stepNumber: 2,
+        instruction: 'If Unconscious But Breathing (Recovery Position)',
+        detail: 'Roll the pregnant woman onto her LEFT side to prevent the uterus from compressing major blood vessels, restoring blood flow to her heart and the fetus.',
+        audioText: 'If she is breathing, gently roll her onto her left side.',
+      },
+      {
+        stepNumber: 3,
+        instruction: 'If Not Breathing (Begin CPR)',
+        detail: 'Start chest compressions at the same sternum location as standard CPR. Have a second rescuer pull the belly continuously to the left side (Left Uterine Displacement).',
+        criticalWarning: 'Do NOT position the patient flat on her back without displacing the uterus.',
+        audioText: 'If not breathing, start compressions. Have someone pull the belly strictly to the left side.',
+      }
+    ],
+    dos: [
+      'Roll unconscious pregnant women onto their left side',
+      'Perform chest compressions at the same sternum location as standard CPR',
+      'Continuously displace the belly to the left during CPR'
+    ],
+    donts: [
+      'Do NOT lay an unconscious pregnant woman flat on her back',
+      'Do NOT delay compressions'
+    ]
   }
 ];

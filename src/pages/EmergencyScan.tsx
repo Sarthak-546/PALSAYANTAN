@@ -13,7 +13,7 @@ import { BurnSlideshow } from '../components/first-aid/BurnSlideshow';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { ROUTES } from '../routes';
 
-type Emergency = 'none' | 'cpr' | 'bleeding' | 'choking' | 'burns';
+type Emergency = 'none' | 'cpr' | 'bleeding' | 'choking' | 'burns' | 'pregnancy-cpr' | 'pregnancy-recovery';
 type ChokingPhase = 'back-blows' | 'abdominal-thrusts';
 
 const CHOKING_PHASE_INSTRUCTION: Record<ChokingPhase, string> = {
@@ -67,7 +67,7 @@ export const EmergencyScan = () => {
 
   const protocolParam = searchParams.get('protocol') as Emergency | null;
   const initialProtocol =
-    protocolParam && ['cpr', 'bleeding', 'choking', 'burns'].includes(protocolParam)
+    protocolParam && ['cpr', 'bleeding', 'choking', 'burns', 'pregnancy-cpr', 'pregnancy-recovery'].includes(protocolParam)
       ? protocolParam
       : 'none';
 
@@ -122,7 +122,7 @@ export const EmergencyScan = () => {
 
   // MediaPipe Pose tracking — CPR only
   useEffect(() => {
-    if (activeEmergency !== 'cpr') {
+    if (activeEmergency !== 'cpr' && activeEmergency !== 'pregnancy-cpr') {
       setSternumPoint(null);
       setPoseError(null);
       return;
@@ -230,6 +230,10 @@ export const EmergencyScan = () => {
     let text = 'Analyzing scene. Please select the emergency type below.';
     if (activeEmergency === 'cpr') {
       text = 'Cardiac arrest protocol. Place hands on the target.';
+    } else if (activeEmergency === 'pregnancy-cpr') {
+      text = "Pregnancy protocol active. Shift the belly to the left side. Place hands on the target and compress to the beat.";
+    } else if (activeEmergency === 'pregnancy-recovery') {
+      text = "Patient is breathing. Roll her onto her left side to restore blood flow. Keep airway clear.";
     } else if (activeEmergency === 'bleeding') {
       text = woundPoint
         ? 'Active hemorrhage detected. Apply firm direct pressure to the highlighted area.'
@@ -251,7 +255,7 @@ export const EmergencyScan = () => {
       <AudioGuidance text={instructionText} isActive={voiceGuidance} />
 
       {/* 110 BPM audible metronome (CPR only) */}
-      <CPRMetronome isActive={activeEmergency === 'cpr'} />
+      <CPRMetronome isActive={activeEmergency === 'cpr' || activeEmergency === 'pregnancy-cpr'} />
 
       {/* Bleeding detector (mounted only when needed) */}
       {activeEmergency === 'bleeding' && (
@@ -279,6 +283,10 @@ export const EmergencyScan = () => {
           <ScanOverlay isScanning={isScanning} scanProgress={scanProgress} />
 
           {activeEmergency === 'cpr' && (
+            <SternumOverlay targetX={sternumPoint?.x} targetY={sternumPoint?.y} />
+          )}
+
+          {activeEmergency === 'pregnancy-cpr' && (
             <SternumOverlay targetX={sternumPoint?.x} targetY={sternumPoint?.y} />
           )}
 
@@ -434,12 +442,37 @@ export const EmergencyScan = () => {
 
       {/* ── Instruction text pill (non-choking/burn modes only) ── */}
       {activeEmergency !== 'choking' && activeEmergency !== 'burns' && (
-        <div className="absolute top-16 inset-x-4 max-w-sm mx-auto z-40 pointer-events-none">
-          <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white px-3 py-1.5 rounded-2xl text-center shadow-lg">
+        <div className="absolute top-16 inset-x-4 max-w-sm mx-auto z-40 pointer-events-auto flex flex-col gap-2">
+          <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white px-3 py-1.5 rounded-2xl text-center shadow-lg pointer-events-none">
             <p className="text-xs font-normal text-slate-200">
               {instructionText}
             </p>
           </div>
+
+          {(activeEmergency === 'pregnancy-cpr' || activeEmergency === 'pregnancy-recovery') && (
+            <div className="flex w-full bg-white/10 backdrop-blur-md rounded-2xl p-1 border border-white/20 shadow-lg mt-1">
+              <button
+                onClick={() => setActiveEmergency('pregnancy-cpr')}
+                className={`flex-1 py-1.5 text-[10px] sm:text-xs font-bold rounded-xl transition-all ${
+                  activeEmergency === 'pregnancy-cpr'
+                    ? 'bg-fuchsia-600 text-white shadow'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                Maternal CPR
+              </button>
+              <button
+                onClick={() => setActiveEmergency('pregnancy-recovery')}
+                className={`flex-1 py-1.5 text-[10px] sm:text-xs font-bold rounded-xl transition-all ${
+                  activeEmergency === 'pregnancy-recovery'
+                    ? 'bg-fuchsia-600 text-white shadow'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                Recovery Position
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -453,6 +486,44 @@ export const EmergencyScan = () => {
           </div>
           <video
             src="/videos/h.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-20 sm:h-24 object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLVideoElement).src = '/h.mp4';
+            }}
+          />
+        </div>
+      )}
+
+      {activeEmergency === 'pregnancy-cpr' && (
+        <div className="absolute top-36 right-4 z-40 w-28 sm:w-36 rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-black/95 pointer-events-auto">
+          <div className="bg-fuchsia-600/90 px-2 py-0.5 text-[9px] font-bold tracking-wider text-white text-center uppercase">
+            L.U.D. TECHNIQUE
+          </div>
+          <video
+            src="/videos/pregnancy-lud.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-20 sm:h-24 object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLVideoElement).src = '/h.mp4';
+            }}
+          />
+        </div>
+      )}
+
+      {activeEmergency === 'pregnancy-recovery' && (
+        <div className="absolute top-36 right-4 z-40 w-28 sm:w-36 rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-black/95 pointer-events-auto">
+          <div className="bg-fuchsia-600/90 px-2 py-0.5 text-[9px] font-bold tracking-wider text-white text-center uppercase">
+            RECOVERY POS.
+          </div>
+          <video
+            src="/videos/pregnancy-recovery.mp4"
             autoPlay
             loop
             muted
@@ -516,7 +587,7 @@ export const EmergencyScan = () => {
         )}
 
         <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-2xl p-3 shadow-2xl">
-          <EmergencyActionPanel />
+          <EmergencyActionPanel isPregnancy={activeEmergency === 'pregnancy-cpr' || activeEmergency === 'pregnancy-recovery'} />
         </div>
       </div>
     </div>
