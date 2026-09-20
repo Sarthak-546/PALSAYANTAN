@@ -165,13 +165,19 @@ export const EmergencyScan = () => {
           return;
         }
 
-        const midX = (left.x + right.x) / 2;
-        const shoulderWidth = Math.hypot(left.x - right.x, left.y - right.y);
-        const midY = (left.y + right.y) / 2 + shoulderWidth * 0.45;
+        // Convert both shoulders to true screen pixels FIRST (handles object-cover cropping),
+        // then do all geometry in pixel space so tall portrait viewports don't distort it.
+        const leftPx = normalizedToPixels(left.x, left.y, video);
+        const rightPx = normalizedToPixels(right.x, right.y, video);
 
-        const cw = video.clientWidth || window.innerWidth;
-        const ch = video.clientHeight || window.innerHeight;
-        setSternumPoint({ x: midX * cw, y: midY * ch });
+        const midX = (leftPx.x + rightPx.x) / 2;
+        const midY = (leftPx.y + rightPx.y) / 2;
+        const shoulderWidth = Math.hypot(leftPx.x - rightPx.x, leftPx.y - rightPx.y);
+
+        // Sternum sits a fixed fraction of shoulder width below the shoulder line.
+        const sternumY = midY + shoulderWidth * 0.28;
+
+        setSternumPoint({ x: midX, y: sternumY });
       });
     } catch (err) {
       console.error('Failed to initialise pose detection:', err);
