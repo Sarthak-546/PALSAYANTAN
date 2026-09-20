@@ -35,7 +35,7 @@ export const SternumOverlay: React.FC<SternumOverlayProps> = ({ targetX, targetY
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'none',
         zIndex: 50,
-        width: '140px',
+        width: 'clamp(90px, 25vw, 120px)',
         animation: 'heartbeatCPR 0.545s infinite ease-in-out',
         filter: 'drop-shadow(0px 8px 16px rgba(220, 38, 38, 0.7))'
       }}
