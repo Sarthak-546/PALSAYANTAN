@@ -21,8 +21,8 @@ export const SternumOverlay: React.FC<SternumOverlayProps> = ({ targetX, targetY
     }
   }, []);
 
-  // Prevent rendering before pose detection locks on
-  if (targetX === undefined || targetY === undefined || isNaN(targetX) || isNaN(targetY)) return null;
+  const posX = targetX ? `${targetX}px` : '50%';
+  const posY = targetY ? `${targetY}px` : '36%';
 
   return (
     <img
@@ -30,8 +30,8 @@ export const SternumOverlay: React.FC<SternumOverlayProps> = ({ targetX, targetY
       alt="CPR Hand Placement"
       style={{
         position: 'absolute',
-        left: targetX,
-        top: targetY,
+        left: posX,
+        top: posY,
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'none',
         zIndex: 50,
