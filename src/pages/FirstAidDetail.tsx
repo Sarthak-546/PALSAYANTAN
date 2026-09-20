@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BurnSlideshow } from '../components/first-aid/BurnSlideshow';
+import { PregnancyGuide } from '../components/first-aid/PregnancyGuide';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Shield, Volume2, VolumeX, XCircle, Video } from 'lucide-react';
 import { AudioGuidance } from '../components/ar/AudioGuidance';
@@ -62,7 +63,7 @@ export const FirstAidDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors">
       {/* Voice guidance */}
-      {scenario.id !== 'burns' && (
+      {scenario.id !== 'burns' && scenario.id !== 'pregnancy' && (
         <AudioGuidance text={step.audioText ?? step.instruction} isActive={voiceGuidance} />
       )}
 
@@ -176,7 +177,11 @@ export const FirstAidDetail = () => {
           </div>
         )}
 
-        {scenario.id === 'burns' ? (
+        {scenario.id === 'pregnancy' ? (
+          <div className="mb-5">
+            <PregnancyGuide />
+          </div>
+        ) : scenario.id === 'burns' ? (
           <div className="mb-5">
             <BurnSlideshow isCompact />
           </div>

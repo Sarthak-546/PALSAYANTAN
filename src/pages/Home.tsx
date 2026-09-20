@@ -121,7 +121,7 @@ export const Home = () => {
           </button>
 
           <button
-            onClick={() => navigate('/emergency-scan?protocol=pregnancy-cpr')}
+            onClick={() => navigate('/first-aid/pregnancy')}
             className="flex flex-col items-center justify-center gap-2 text-center bg-fuchsia-100/50 dark:bg-fuchsia-950/40 border border-fuchsia-300 dark:border-fuchsia-500/30 hover:border-fuchsia-400 dark:hover:border-fuchsia-500/60 p-3 sm:p-3.5 rounded-2xl shadow-sm transition-all active:scale-95 group"
           >
             <Baby className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-400 group-hover:scale-110 transition-transform drop-shadow-sm" />

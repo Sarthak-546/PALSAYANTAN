@@ -254,13 +254,12 @@ export const emergencyScenarios: EmergencyScenario[] = [
   {
     id: "pregnancy",
     title: 'Pregnancy Emergency',
-    category: 'Medical',
+    category: 'Critical Medical',
     severity: 'CRITICAL',
     estimatedTime: '~20 min until EMS',
-    overview: 'Protocols for maternal cardiac arrest (requiring Left Uterine Displacement) and unconsciousness (Left Lateral Recovery Position) to protect both mother and fetus.',
+    overview: 'Specialized life-support protocol for late-stage pregnancy (20+ weeks). Standard first aid must be modified with Left Uterine Displacement or Left Lateral Positioning to maintain vena cava blood flow.',
     quickActionBadge: 'Left Lateral Displacement',
-    hasArGuide: true,
-    arRoute: '/emergency-scan?protocol=pregnancy-cpr',
+    hasArGuide: false,
     steps: [
       {
         stepNumber: 1,
@@ -283,13 +282,13 @@ export const emergencyScenarios: EmergencyScenario[] = [
       }
     ],
     dos: [
-      'Roll unconscious pregnant women onto their left side',
-      'Perform chest compressions at the same sternum location as standard CPR',
-      'Continuously displace the belly to the left during CPR'
+      'Call 102 / 112 immediately',
+      'Manually displace pregnant abdomen to the patient\'s left side during CPR',
+      'Place breathing patients in the left lateral recovery position'
     ],
     donts: [
-      'Do NOT lay an unconscious pregnant woman flat on her back',
-      'Do NOT delay compressions'
+      'NEVER leave a pregnant patient flat on her back (supine)',
+      'Do NOT delay chest compressions for unresponsive victims'
     ]
   }
 ];
