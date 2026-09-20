@@ -1,0 +1,6 @@
+{
+  "appId": "com.sih.firstaidar",
+  "appName": "FirstAid AR",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

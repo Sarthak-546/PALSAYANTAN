@@ -245,12 +245,23 @@ export const EmergencyScan = () => {
           />
           <ScanOverlay isScanning={isScanning} scanProgress={scanProgress} />
 
-          {activeEmergency === 'cpr' && sternumPoint && (
-            <SternumOverlay targetX={sternumPoint.x} targetY={sternumPoint.y} />
+          {activeEmergency === 'cpr' && (
+            <SternumOverlay targetX={sternumPoint?.x} targetY={sternumPoint?.y} />
           )}
 
           {activeEmergency === 'bleeding' && woundPoint && (
-            <SternumOverlay targetX={woundPoint.x} targetY={woundPoint.y} mode="bleeding" />
+            <div
+              className="absolute pointer-events-none z-40 flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+              style={{ left: woundPoint.x, top: woundPoint.y }}
+            >
+              <div className="relative w-20 h-20 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-2 border-amber-500 animate-ping opacity-40" />
+                <div className="absolute inset-2 rounded-full border-2 border-amber-500 bg-amber-500/20" />
+              </div>
+              <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white bg-amber-600 px-3 py-1 rounded-full shadow-lg border border-amber-400">
+                APPLY PRESSURE
+              </span>
+            </div>
           )}
         </div>
       ) : activeEmergency === 'choking' ? (

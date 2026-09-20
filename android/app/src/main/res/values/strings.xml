@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FirstAid AR</string>
+    <string name="title_activity_main">FirstAid AR</string>
+    <string name="package_name">com.sih.firstaidar</string>
+    <string name="custom_url_scheme">com.sih.firstaidar</string>
+</resources>
