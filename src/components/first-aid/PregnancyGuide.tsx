@@ -54,7 +54,7 @@ export const PregnancyGuide = () => {
         <div className="relative w-full aspect-[16/9] bg-black flex items-center justify-center overflow-hidden">
           <video
             key={activeTab} // Force remount to fix browser autoplay on src change
-            src={activeTab === 'CPR' ? '/videos/pcpr.mp4' : '/videos/pregnancy-recovery.mp4'}
+            src={activeTab === 'CPR' ? '/videos/pcpr.mp4' : '/videos/pcpr2.mp4'}
             autoPlay
             loop
             muted
@@ -63,6 +63,10 @@ export const PregnancyGuide = () => {
             onError={(e) => {
               if (activeTab === 'CPR' && (e.currentTarget.src.endsWith('/videos/pcpr.mp4'))) {
                 e.currentTarget.src = '/pcpr.mp4';
+                return;
+              }
+              if (activeTab === 'RECOVERY' && (e.currentTarget.src.endsWith('/videos/pcpr2.mp4'))) {
+                e.currentTarget.src = '/2pcpr.mp4';
                 return;
               }
               const img = document.createElement('img');
