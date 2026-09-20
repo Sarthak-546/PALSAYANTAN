@@ -273,6 +273,26 @@ export const EmergencyScan = () => {
         />
       )}
 
+      {activeEmergency === 'bleeding' && (
+        <div className="absolute top-16 right-4 z-40 w-32 sm:w-40 rounded-2xl overflow-hidden border-2 border-red-500/80 shadow-2xl bg-black/90 backdrop-blur-md pointer-events-auto">
+          <div className="bg-red-600/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white text-center uppercase">
+            Direct Pressure Guide
+          </div>
+          <video
+            src="/videos/press2.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-24 sm:h-28 object-contain bg-black"
+            onError={(e) => {
+              // Fallback if placed at root public directory
+              (e.currentTarget as HTMLVideoElement).src = '/press2.mp4';
+            }}
+          />
+        </div>
+      )}
+
       {/* ── Camera layer (hidden for choking and burns) ── */}
       {activeEmergency !== 'choking' && activeEmergency !== 'burns' ? (
         <div className="absolute inset-0">
