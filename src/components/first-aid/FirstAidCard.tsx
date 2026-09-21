@@ -1,4 +1,6 @@
 import type { EmergencyScenario } from '../../data/emergencyScenarios';
+import { t } from '../../data/emergencyScenarios';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface FirstAidCardProps {
   scenario: EmergencyScenario;
@@ -12,13 +14,14 @@ const SEVERITY_STYLES: Record<EmergencyScenario['severity'], { bg: string; text:
   STABLE: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-400', ring: 'ring-blue-300 dark:ring-blue-900/60' },
 };
 
-const CATEGORY_EMOJI: Record<EmergencyScenario['category'], string> = {
+const CATEGORY_EMOJI: Record<string, string> = {
   'Critical Life Support': '❤️‍🩹',
   'Trauma & Injury': '🩹',
   'Environmental & Allergic': '🌡️',
 };
 
 export const FirstAidCard = ({ scenario, onSelect, className = '' }: FirstAidCardProps) => {
+  const { language } = useLanguage();
   const sev = SEVERITY_STYLES[scenario.severity];
 
   // Extract the light color base for the ribbon (e.g. bg-red-100 -> bg-red-500)
@@ -37,7 +40,7 @@ export const FirstAidCard = ({ scenario, onSelect, className = '' }: FirstAidCar
         {/* Top row: category + severity */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase">
-            {CATEGORY_EMOJI[scenario.category]} {scenario.category}
+            {CATEGORY_EMOJI[t(scenario.category, 'en') as keyof typeof CATEGORY_EMOJI]} {t(scenario.category, language)}
           </span>
           <span className={`text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full ${sev.bg} ${sev.text}`}>
             {scenario.severity}
@@ -46,25 +49,25 @@ export const FirstAidCard = ({ scenario, onSelect, className = '' }: FirstAidCar
 
         {/* Title */}
         <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-1.5 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
-          {scenario.title}
+          {t(scenario.title, language)}
         </h3>
 
         {/* Overview */}
         <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed mb-4 line-clamp-2">
-          {scenario.overview}
+          {t(scenario.overview, language)}
         </p>
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[11px] font-semibold rounded-full">
-            {scenario.steps.length} Steps
+            {scenario.steps.length} {language === 'hi' ? 'कदम' : 'Steps'}
           </span>
           <span className="px-2.5 py-1 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 text-[11px] font-medium rounded-full">
-            {scenario.estimatedTime}
+            {t(scenario.estimatedTime, language)}
           </span>
           {scenario.hasArGuide && (
             <span className="px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-[11px] font-semibold rounded-full">
-              AR Guide
+              {language === 'hi' ? 'एआर गाइड' : 'AR Guide'}
             </span>
           )}
         </div>
@@ -73,7 +76,7 @@ export const FirstAidCard = ({ scenario, onSelect, className = '' }: FirstAidCar
       {/* Quick-action footer */}
       <div className="px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
         <span className="text-xs font-semibold text-red-600 dark:text-red-400 tracking-wide">
-          ⚡ {scenario.quickActionBadge}
+          ⚡ {t(scenario.quickActionBadge, language)}
         </span>
         <svg className="w-4 h-4 text-gray-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />

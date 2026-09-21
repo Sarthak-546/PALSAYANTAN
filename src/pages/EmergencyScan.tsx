@@ -11,6 +11,7 @@ import { EmergencyActionPanel } from '../components/emergency/EmergencyActionPan
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { BurnSlideshow } from '../components/first-aid/BurnSlideshow';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { ROUTES } from '../routes';
 
 type Emergency = 'none' | 'cpr' | 'bleeding' | 'choking' | 'burns';
@@ -112,8 +113,7 @@ export const EmergencyScan = () => {
       : 'none';
 
   const [activeEmergency, setActiveEmergency] = useState<Emergency>(initialProtocol);
-  const [language, setLanguage] = useState<'en' | 'hi'>(() => (localStorage.getItem('preferredLang') as 'en' | 'hi') || 'en');
-  const [showLangModal, setShowLangModal] = useState(() => !localStorage.getItem('preferredLang'));
+  const { language, setLanguage, hasSelectedLanguage, setHasSelectedLanguage } = useLanguage();
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [chokingPhase, setChokingPhase] = useState<ChokingPhase>('back-blows');
   const [sternumPoint, setSternumPoint] = useState<{ x: number; y: number } | null>(null);
@@ -124,12 +124,7 @@ export const EmergencyScan = () => {
   const [scanProgress, setScanProgress] = useState(0);
 
   
-  const handleSetLanguage = (lang: 'en' | 'hi') => {
-    setLanguage(lang);
-    localStorage.setItem('preferredLang', lang);
-    setShowLangModal(false);
-  };
-
+  
   const handleCameraError = useCallback((msg: string) => setCameraError(msg), []);
 
   const stopCamera = useCallback(() => {
@@ -301,7 +296,7 @@ export const EmergencyScan = () => {
   return (
     <div className="fixed inset-0 z-0 w-full h-screen bg-black text-white overflow-hidden">
       {/* ── Initial Language Selection Modal ── */}
-      {showLangModal && (
+      {!hasSelectedLanguage && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-slate-900 border border-white/20 rounded-2xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4">
             <h2 className="text-white text-lg font-bold text-center tracking-wide">
@@ -312,13 +307,13 @@ export const EmergencyScan = () => {
             </p>
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => handleSetLanguage('hi')}
+                onClick={() => setLanguage('hi')}
                 className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-base"
               >
                 हिंदी (Hindi)
               </button>
               <button
-                onClick={() => handleSetLanguage('en')}
+                onClick={() => setLanguage('en')}
                 className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl border border-white/10 transition-all text-base"
               >
                 English
@@ -516,7 +511,7 @@ export const EmergencyScan = () => {
 
           
           <button
-            onClick={() => handleSetLanguage(language === 'en' ? 'hi' : 'en')}
+            onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
             className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-white/20 text-xs font-bold text-white tracking-wider backdrop-blur-md active:scale-95 transition-all"
           >
             {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}

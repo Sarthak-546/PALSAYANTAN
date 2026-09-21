@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { EmergencySessionProvider } from './contexts/EmergencySessionContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { ROUTES } from './routes';
 import { Home } from './pages/Home';
@@ -16,7 +17,8 @@ function App() {
   return (
     // ErrorBoundary: if any page ever throws, judges see a recovery screen, not a white screen.
     <ErrorBoundary>
-      <ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
         <EmergencySessionProvider>
         <BrowserRouter>
           <Routes>
@@ -46,6 +48,7 @@ function App() {
         </BrowserRouter>
       </EmergencySessionProvider>
       </ThemeProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }

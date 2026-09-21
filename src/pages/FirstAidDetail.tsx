@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Shield, Volume2, VolumeX, XCircle, Video } from 'lucide-react';
 import { AudioGuidance } from '../components/ar/AudioGuidance';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { t } from '../data/emergencyScenarios';
 import { useScenario } from '../hooks/useScenario';
 import { ROUTES, arFirstAidPath } from '../routes';
 import type { EmergencyScenario } from '../data/emergencyScenarios';
@@ -15,7 +17,46 @@ const SEVERITY_STYLES: Record<EmergencyScenario['severity'], string> = {
   STABLE: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 ring-1 ring-blue-300 dark:ring-blue-900/60',
 };
 
+
+  const TRANSLATIONS = {
+    en: {
+      library: 'Library',
+      overview: 'Overview',
+      step: 'STEP',
+      criticalWarning: 'CRITICAL WARNING',
+      previous: 'Previous',
+      next: 'Next',
+      finish: '✓ Finish',
+      liveArGuide: 'Open Live AR Guidance',
+      backToLibrary: '← Back to Library',
+      steps: 'steps',
+      scenarioNotFound: 'Scenario Not Found',
+      scenarioNotFoundText: 'The requested emergency scenario could not be loaded.',
+      returnToLibrary: 'Return to Library',
+      videoLabel: 'Technique Video Demonstration',
+      offlineVideo: 'OFFLINE VIDEO'
+    },
+    hi: {
+      library: 'लाइब्रेरी',
+      overview: 'अवलोकन',
+      step: 'कदम',
+      criticalWarning: 'गंभीर चेतावनी',
+      previous: 'पिछला',
+      next: 'अगला',
+      finish: '✓ समाप्त',
+      liveArGuide: 'लाइव AR गाइड खोलें',
+      backToLibrary: '← लाइब्रेरी में वापस',
+      steps: 'कदम',
+      scenarioNotFound: 'स्थिति नहीं मिली',
+      scenarioNotFoundText: 'अनुरोधित स्थिति लोड नहीं की जा सकी।',
+      returnToLibrary: 'लाइब्रेरी में वापस आएं',
+      videoLabel: 'तकनीकी वीडियो प्रदर्शन',
+      offlineVideo: 'ऑफ़लाइन वीडियो'
+    }
+  };
+
 export const FirstAidDetail = () => {
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const { voiceGuidance, setVoiceGuidance } = useEmergencySession();
   const { scenario } = useScenario();
@@ -30,7 +71,7 @@ export const FirstAidDetail = () => {
   useEffect(() => {
     if (scenario?.id === 'choking' && scenario.steps && scenario.steps[currentStep]) {
       const stepObj = scenario.steps[currentStep];
-      const text = stepObj.instruction.toLowerCase() + stepObj.detail.toLowerCase();
+      const text = t(stepObj.instruction, 'en').toLowerCase() + t(stepObj.detail, 'en').toLowerCase();
       if (text.includes('abdominal thrust') || text.includes('heimlich')) {
         setSelectedChokingVideo('B');
       } else if (text.includes('back blow') || text.includes('back-blow')) {
@@ -43,8 +84,8 @@ export const FirstAidDetail = () => {
   if (!scenario) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 transition-colors">
-        <h1 className="text-2xl font-bold text-red-500 mb-3">Scenario Not Found</h1>
-        <p className="text-gray-500 dark:text-slate-400 mb-6 text-sm">The requested emergency scenario could not be loaded.</p>
+        <h1 className="text-2xl font-bold text-red-500 mb-3">{TRANSLATIONS[language].scenarioNotFound}</h1>
+        <p className="text-gray-500 dark:text-slate-400 mb-6 text-sm">{TRANSLATIONS[language].scenarioNotFoundText}</p>
         <button
           onClick={() => navigate(ROUTES.firstAid)}
           className="px-5 py-2.5 bg-gray-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl hover:bg-gray-800 dark:hover:bg-white transition-colors"
@@ -64,7 +105,7 @@ export const FirstAidDetail = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors">
       {/* Voice guidance */}
       {scenario.id !== 'burns' && scenario.id !== 'pregnancy' && (
-        <AudioGuidance text={step.audioText ?? step.instruction} isActive={voiceGuidance} />
+        <AudioGuidance text={t(step.audioText ?? step.instruction, language)} isActive={voiceGuidance} />
       )}
 
       {/* Sticky header */}
@@ -75,7 +116,7 @@ export const FirstAidDetail = () => {
             className="flex items-center gap-1.5 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
           >
             <ArrowLeft className="h-4 w-4" />
-            Library
+            {TRANSLATIONS[language].library}
           </button>
 
           <span className={`text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full ${SEVERITY_STYLES[scenario.severity] ?? ''}`}>
@@ -104,20 +145,20 @@ export const FirstAidDetail = () => {
       <main className="max-w-xl mx-auto px-4 pt-5 pb-10">
         {/* Title & meta */}
         <div className="mb-5">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-50 mb-1.5 transition-colors">{scenario.title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-50 mb-1.5 transition-colors">{t(scenario.title, language)}</h1>
           <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
-            <span>{scenario.category}</span>
+            <span>{t(scenario.category, language)}</span>
             <span>·</span>
-            <span>{scenario.estimatedTime}</span>
+            <span>{t(scenario.estimatedTime, language)}</span>
             <span>·</span>
-            <span>{scenario.steps.length} steps</span>
+            <span>{scenario.steps.length} {TRANSLATIONS[language].steps}</span>
           </div>
         </div>
 
         {/* Overview card */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm ring-1 ring-gray-100 dark:ring-slate-800 p-4 mb-5 transition-colors">
-          <h2 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Overview</h2>
-          <p className="text-gray-700 dark:text-slate-300 text-sm leading-relaxed">{scenario.overview}</p>
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">{TRANSLATIONS[language].overview}</h2>
+          <p className="text-gray-700 dark:text-slate-300 text-sm leading-relaxed">{t(scenario.overview, language)}</p>
         </div>
 
         {/* ── Optional Offline Video Demonstration (Choking) ── */}
@@ -128,11 +169,11 @@ export const FirstAidDetail = () => {
               <div className="flex items-center space-x-2">
                 <Video className="w-4 h-4 text-cyan-400" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                  Technique Video Demonstration
+                  {TRANSLATIONS[language].videoLabel}
                 </span>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                OFFLINE VIDEO
+                {TRANSLATIONS[language].offlineVideo}
               </span>
             </div>
 
@@ -190,7 +231,7 @@ export const FirstAidDetail = () => {
             {/* Step header */}
           <div className="px-5 pt-4 pb-3 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
             <span className="text-sm font-black text-blue-600 dark:text-blue-400 tracking-wide uppercase">
-              STEP {step.stepNumber} <span className="text-blue-300 dark:text-blue-700 font-semibold px-1">/</span> {steps.length}
+              {TRANSLATIONS[language].step} {step.stepNumber} <span className="text-blue-300 dark:text-blue-700 font-semibold px-1">/</span> {steps.length}
             </span>
             <div className="flex gap-1.5">
               {steps.map((_, i) => (
@@ -206,14 +247,14 @@ export const FirstAidDetail = () => {
 
           {/* Step content */}
           <div className="px-5 py-5 space-y-4">
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-slate-50 tracking-tight leading-tight">{step.instruction}</h3>
-            <p className="text-gray-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed font-medium">{step.detail}</p>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-slate-50 tracking-tight leading-tight">{t(step.instruction, language)}</h3>
+            <p className="text-gray-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed font-medium">{t(step.detail, language)}</p>
             {step.criticalWarning && (
               <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/40 border-l-4 border-amber-500 rounded-r-xl p-4 shadow-sm">
                 <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-amber-900 dark:text-amber-100 text-sm font-bold tracking-wide uppercase mb-0.5">Critical Warning</p>
-                  <p className="text-amber-800 dark:text-amber-200/90 text-sm font-semibold leading-snug">{step.criticalWarning}</p>
+                  <p className="text-amber-900 dark:text-amber-100 text-sm font-bold tracking-wide uppercase mb-0.5">{TRANSLATIONS[language].criticalWarning}</p>
+                  <p className="text-amber-800 dark:text-amber-200/90 text-sm font-semibold leading-snug">{step.criticalWarning ? t(step.criticalWarning, language) : ''}</p>
                 </div>
               </div>
             )}
@@ -227,7 +268,8 @@ export const FirstAidDetail = () => {
               className="flex items-center gap-1 text-sm font-semibold text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              <ChevronLeft className="h-4 w-4" />
+              {TRANSLATIONS[language].previous}
             </button>
 
             {isLast ? (
@@ -235,14 +277,14 @@ export const FirstAidDetail = () => {
                 onClick={() => navigate(ROUTES.firstAid)}
                 className="px-5 py-2 bg-green-600 hover:bg-green-500 dark:bg-green-700 dark:hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-colors"
               >
-                ✓ Finish
+                {TRANSLATIONS[language].finish}
               </button>
             ) : (
               <button
                 onClick={() => setCurrentStep((s) => s + 1)}
                 className="flex items-center gap-1 px-5 py-2 bg-blue-600 hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-colors"
               >
-                Next
+                {TRANSLATIONS[language].next}
                 <ChevronRight className="h-4 w-4" />
               </button>
             )}
@@ -278,7 +320,7 @@ export const FirstAidDetail = () => {
                 ) : (
                   <XCircle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0" />
                 )}
-                <span className="text-sm font-medium text-gray-800 dark:text-slate-200">{item}</span>
+                <span className="text-sm font-medium text-gray-800 dark:text-slate-200">{t(item, language)}</span>
               </li>
             ))}
           </ul>
@@ -292,14 +334,15 @@ export const FirstAidDetail = () => {
               className="w-full flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-500 dark:bg-purple-700 dark:hover:bg-purple-600 text-white text-sm font-bold rounded-2xl shadow-lg shadow-purple-600/20 dark:shadow-purple-900/40 transition-all active:scale-[0.98]"
             >
               <Shield className="h-4 w-4" />
-              Open Live AR Guidance
+              <Shield className="h-4 w-4" />
+              {TRANSLATIONS[language].liveArGuide}
             </button>
           )}
           <button
             onClick={() => navigate(ROUTES.firstAid)}
             className="w-full text-sm font-medium text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 py-2 transition-colors"
           >
-            ← Back to Library
+            ← Back to {TRANSLATIONS[language].library}
           </button>
         </div>
       </main>
