@@ -16,9 +16,15 @@ import { ROUTES } from '../routes';
 type Emergency = 'none' | 'cpr' | 'bleeding' | 'choking' | 'burns';
 type ChokingPhase = 'back-blows' | 'abdominal-thrusts';
 
-const CHOKING_PHASE_INSTRUCTION: Record<ChokingPhase, string> = {
-  'back-blows': 'Lean victim forward. Deliver up to five sharp blows between the shoulder blades with the heel of your hand.',
-  'abdominal-thrusts': 'Stand behind victim. Place your fist above the navel and pull inward and upward five times.',
+const CHOKING_PHASE_INSTRUCTION: Record<ChokingPhase, Record<'en'|'hi', string>> = {
+  'back-blows': {
+    en: 'Lean victim forward. Deliver up to five sharp blows between the shoulder blades with the heel of your hand.',
+    hi: 'पीड़ित को आगे की ओर झुकाएं। अपनी हथेली के निचले हिस्से से कंधों के बीच पांच बार जोर से मारें।'
+  },
+  'abdominal-thrusts': {
+    en: 'Stand behind victim. Place your fist above the navel and pull inward and upward five times.',
+    hi: 'पीड़ित के पीछे खड़े हो जाएं। अपनी मुट्ठी को नाभि के ऊपर रखें और पांच बार अंदर और ऊपर की ओर खींचें।'
+  },
 };
 
 const CHOKING_PHASE_VIDEO: Record<ChokingPhase, string> = {
@@ -78,6 +84,7 @@ export const EmergencyScan = () => {
       : 'none';
 
   const [activeEmergency, setActiveEmergency] = useState<Emergency>(initialProtocol);
+  const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [chokingPhase, setChokingPhase] = useState<ChokingPhase>('back-blows');
   const [sternumPoint, setSternumPoint] = useState<{ x: number; y: number } | null>(null);
@@ -233,15 +240,19 @@ export const EmergencyScan = () => {
   const [instructionText, setInstructionText] = useState('');
 
   useEffect(() => {
-    let text = 'Analyzing scene. Please select the emergency type below.';
+    let text = language === 'en' 
+      ? 'Analyzing scene. Please select the emergency type below.' 
+      : 'स्थिति का विश्लेषण किया जा रहा है। कृपया नीचे आपातकालीन प्रकार चुनें।';
     if (activeEmergency === 'cpr') {
-      text = 'Cardiac arrest protocol. Place hands on the target.';
+      text = language === 'en' 
+        ? 'Cardiac arrest protocol. Place hands on the target.' 
+        : 'कार्डियक अरेस्ट प्रोटोकॉल। लक्ष्य पर हाथ रखें।';
     } else if (activeEmergency === 'bleeding') {
       text = woundPoint
-        ? 'Active hemorrhage detected. Apply firm direct pressure to the highlighted area.'
-        : 'No injury spotted. Scanning for wounds...';
+        ? (language === 'en' ? 'Active hemorrhage detected. Apply firm direct pressure to the highlighted area.' : 'रक्तस्राव का पता चला। हाइलाइट किए गए क्षेत्र पर सीधा दबाव डालें।')
+        : (language === 'en' ? 'No injury spotted. Scanning for wounds...' : 'कोई चोट नहीं दिखी। घावों के लिए स्कैन किया जा रहा है...');
     } else if (activeEmergency === 'choking') {
-      text = CHOKING_PHASE_INSTRUCTION[chokingPhase];
+      text = CHOKING_PHASE_INSTRUCTION[chokingPhase][language];
     } else if (activeEmergency === 'burns') {
       text = ''; // BurnSlideshow handles its own voice guidance
     }
@@ -249,12 +260,12 @@ export const EmergencyScan = () => {
     // Small delay guarantees the speech API isn't mid-utterance from a prior render
     const timeout = setTimeout(() => setInstructionText(text), 50);
     return () => clearTimeout(timeout);
-  }, [activeEmergency, chokingPhase, woundPoint]);
+  }, [activeEmergency, chokingPhase, woundPoint, language]);
 
   return (
     <div className="fixed inset-0 z-0 w-full h-screen bg-black text-white overflow-hidden">
       {/* Voice engine — re-speaks on every instructionText change */}
-      <AudioGuidance text={instructionText} isActive={voiceGuidance} />
+      <AudioGuidance text={instructionText} isActive={voiceGuidance} lang={language} />
 
       {/* 110 BPM audible metronome (CPR only) */}
       <CPRMetronome isActive={activeEmergency === 'cpr'} />
@@ -274,8 +285,8 @@ export const EmergencyScan = () => {
       )}
 
       {activeEmergency === 'bleeding' && (
-        <div className="absolute top-16 right-4 z-40 w-32 sm:w-40 rounded-2xl overflow-hidden border-2 border-red-500/80 shadow-2xl bg-black/90 backdrop-blur-md pointer-events-auto">
-          <div className="bg-red-600/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white text-center uppercase">
+        <div className="absolute top-16 right-3 sm:right-4 z-40 w-44 sm:w-56 md:w-64 rounded-2xl overflow-hidden border-2 border-red-500/80 shadow-2xl bg-black/95 backdrop-blur-md pointer-events-auto">
+          <div className="bg-red-600/90 px-2 py-0.5 text-[10px] sm:text-xs font-bold tracking-wider text-white text-center uppercase">
             Direct Pressure Guide
           </div>
           <video
@@ -284,9 +295,9 @@ export const EmergencyScan = () => {
             loop
             muted
             playsInline
-            className="w-full h-24 sm:h-28 object-contain bg-black"
+            className="w-full h-32 sm:h-40 md:h-44 object-contain bg-black"
             onError={(e) => {
-              // Fallback if placed at root public directory
+              // Fallback for root-level asset placement
               (e.currentTarget as HTMLVideoElement).src = '/press2.mp4';
             }}
           />
@@ -439,6 +450,14 @@ export const EmergencyScan = () => {
             </button>
           )}
 
+          
+          <button
+            onClick={() => setLanguage(prev => prev === 'en' ? 'hi' : 'en')}
+            className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-white/20 text-xs font-bold text-white tracking-wider backdrop-blur-md active:scale-95 transition-all"
+          >
+            {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
+          </button>
+          
           <ThemeToggle variant="glass" />
         </div>
 
@@ -542,7 +561,7 @@ export const EmergencyScan = () => {
         )}
 
         <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-2xl p-3 shadow-2xl">
-          <EmergencyActionPanel />
+          <EmergencyActionPanel activeProtocol={activeEmergency} />
         </div>
       </div>
     </div>

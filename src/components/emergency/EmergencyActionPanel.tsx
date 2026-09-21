@@ -8,12 +8,10 @@ const NATIONAL_112 = '112'; // National SOS
 type Fix = { lat: number; lon: number; at: number };
 
 /** Builds the pre-filled SOS text message. Exported so it can be unit-tested. */
-export const buildSosSmsUri = (fix?: { lat: number; lon: number } | null) => {
+export const buildSosSmsUri = (fix: { lat: number; lon: number } | null | undefined, remark: string) => {
   const body = fix
-    ? `EMERGENCY: Medical assistance required! Cardiac/Trauma patient. ` +
-      `Location: https://maps.google.com/?q=${fix.lat.toFixed(6)},${fix.lon.toFixed(6)} ` +
-      `(Lat: ${fix.lat.toFixed(6)}, Lng: ${fix.lon.toFixed(6)})`
-    : 'EMERGENCY: Immediate ambulance required! (GPS unavailable)';
+    ? `EMERGENCY: ${remark}. Location: https://maps.google.com/?q=${fix.lat.toFixed(6)},${fix.lon.toFixed(6)} (Lat: ${fix.lat.toFixed(6)}, Lng: ${fix.lon.toFixed(6)})`
+    : `EMERGENCY: ${remark}. Immediate ambulance required! (GPS unavailable)`;
   // "?&body=" is the form both Android and iOS accept ("?body=" alone fails on iOS).
   return `sms:${SOS_NUMBER}?&body=${encodeURIComponent(body)}`;
 };
@@ -33,8 +31,32 @@ const FRESH_MS = 2 * 60 * 1000;
 
 const MATERNITY_102 = '102'; // Maternity transport
 
-export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy }: { onEmergencyDetected?: () => void, isPregnancy?: boolean }) => {
+export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeProtocol }: { onEmergencyDetected?: () => void, isPregnancy?: boolean, activeProtocol?: string }) => {
   const [status, setStatus] = useState<'idle' | 'locating' | 'no-gps'>('idle');
+  const [emergencyRemark, setEmergencyRemark] = useState<string>('General Medical Emergency');
+
+  useEffect(() => {
+    switch (activeProtocol) {
+      case 'cpr':
+        setEmergencyRemark("Cardiac Arrest / Unresponsive CPR");
+        break;
+      case 'bleeding':
+        setEmergencyRemark("Severe Hemorrhage / Active Bleeding");
+        break;
+      case 'choking':
+        setEmergencyRemark("Choking / Airway Obstruction");
+        break;
+      case 'pregnancy':
+        setEmergencyRemark("Obstetric / Maternal Emergency");
+        break;
+      case 'burns':
+        setEmergencyRemark("Severe Thermal Burn Injury");
+        break;
+      default:
+        setEmergencyRemark("General Medical Trauma");
+        break;
+    }
+  }, [activeProtocol]);
   const [gpsReady, setGpsReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const fixRef = useRef<Fix | null>(null);
@@ -59,7 +81,7 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy }: { onE
   }, []);
 
   const send = (fix: Fix | null) => {
-    openExternal(buildSosSmsUri(fix));
+    openExternal(buildSosSmsUri(fix, emergencyRemark));
     setStatus('idle');
     onEmergencyDetected?.();
   };
@@ -100,6 +122,42 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy }: { onE
         </div>
       )}
 
+      
+      {/* ── Dynamic Remark / Editable Input UI ── */}
+      <div className="space-y-1.5 mb-3">
+        <div className="flex items-center justify-between px-1">
+          <label className="text-[11px] font-semibold tracking-wider text-slate-300 uppercase">
+            Emergency Details / Remark:
+          </label>
+          <span className="text-[10px] text-slate-400">Tap chip or type</span>
+        </div>
+        
+        {/* Quick-Select Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar px-1">
+          {['Cardiac Arrest', 'Bleeding', 'Choking', 'Pregnancy', 'Accident / Trauma'].map((chip) => (
+            <button
+              key={chip}
+              onClick={() => setEmergencyRemark(chip)}
+              className={`whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors border ${
+                emergencyRemark === chip 
+                  ? 'bg-red-500/20 border-red-500/50 text-red-200' 
+                  : 'bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+
+        {/* Editable Remark Field */}
+        <input
+          type="text"
+          value={emergencyRemark}
+          onChange={(e) => setEmergencyRemark(e.target.value)}
+          placeholder="State condition (e.g. CPR, Bleeding, Accident)"
+          className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors"
+        />
+      </div>
       {/* Primary SOS button — always tappable, never locked */}
       <button
         onClick={triggerEmergencySms}
