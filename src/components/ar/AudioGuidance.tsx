@@ -6,37 +6,24 @@ interface AudioGuidanceProps {
   lang?: 'en' | 'hi';
 }
 
-const selectFemaleVoice = (voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
-  // 1. Check for specific top-tier clear female voices
-  const priorityNames = [
-    'Google UK English Female',
-    'Google US English',
-    'Samantha',
-    'Karen',
-    'Victoria',
-    'Microsoft Zira',
-    'Microsoft Jenny Online (Natural)',
-    'en-US-language'
-  ];
-
-  for (const name of priorityNames) {
+const getSelectedVoice = (voices: SpeechSynthesisVoice[], targetLang: 'en' | 'hi') => {
+  if (targetLang === 'hi') {
+    // Prioritize Hindi voices
+    const hindiVoice = voices.find(v => 
+      v.lang === 'hi-IN' || 
+      v.lang.startsWith('hi') || 
+      v.name.toLowerCase().includes('hindi') ||
+      v.name.toLowerCase().includes('lekha')
+    );
+    if (hindiVoice) return hindiVoice;
+  }
+  // English priority: Clear natural female voice
+  const priorityEn = ['Google UK English Female', 'Google US English', 'Samantha', 'Karen', 'Microsoft Zira'];
+  for (const name of priorityEn) {
     const found = voices.find(v => v.name.includes(name));
     if (found) return found;
   }
-
-  // 2. Fallback: Any English voice with "female" in the name or ID
-  const anyFemale = voices.find(v => 
-    v.lang.startsWith('en') && 
-    (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('girl'))
-  );
-  if (anyFemale) return anyFemale;
-
-  // 3. Fallback: Default to standard English (en-US or en-GB)
-  return voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en')) || null;
-};
-
-const selectHindiVoice = (voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
-  return voices.find(v => v.lang.startsWith('hi') || v.name.toLowerCase().includes('hindi') || v.name.toLowerCase().includes('hi-in')) || null;
+  return voices.find(v => v.lang.startsWith('en')) || voices[0] || null;
 };
 
 export const AudioGuidance = ({
@@ -87,20 +74,16 @@ export const AudioGuidance = ({
     
     // Pick voice and apply parameters based on requested language
     const currentVoices = window.speechSynthesis.getVoices();
+    const selectedVoice = getSelectedVoice(currentVoices, lang);
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
     
     if (lang === 'hi') {
-      const hiVoice = selectHindiVoice(currentVoices);
-      if (hiVoice) {
-        utterance.voice = hiVoice;
-      }
       utterance.lang = 'hi-IN';
       utterance.rate = 0.9;
       utterance.pitch = 1.0;
     } else {
-      const enVoice = selectFemaleVoice(currentVoices);
-      if (enVoice) {
-        utterance.voice = enVoice;
-      }
       utterance.lang = 'en-US';
       utterance.rate = 0.95;
       utterance.pitch = 1.05;

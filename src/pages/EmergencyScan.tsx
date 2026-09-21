@@ -60,6 +60,34 @@ function normalizedToPixels(nx: number, ny: number, video: HTMLVideoElement) {
   return { x: nx * vw * scale - offsetX, y: ny * vh * scale - offsetY };
 }
 
+
+const TRANSLATIONS = {
+  en: {
+    selectType: '{TRANSLATIONS[language].selectType}',
+    resetProtocol: '{TRANSLATIONS[language].resetProtocol}',
+    cpr: 'CPR',
+    bleeding: 'Bleeding',
+    choking: 'Choking',
+    burns: 'Burns',
+    exit: 'Exit',
+    liveProtocol: '{TRANSLATIONS[language].liveProtocol}',
+    guidanceStillWorks: 'Guidance and SOS still work.',
+    demoGuide: '{TRANSLATIONS[language].demoGuide}'
+  },
+  hi: {
+    selectType: 'आपातकालीन प्रकार चुनें',
+    resetProtocol: '← प्रोटोकॉल रीसेट करें',
+    cpr: 'सीपीआर',
+    bleeding: 'रक्तस्राव (Bleeding)',
+    choking: 'दम घुटना',
+    burns: 'जलना',
+    exit: 'बाहर जाएं',
+    liveProtocol: 'लाइव AR प्रोटोकॉल',
+    guidanceStillWorks: 'निर्देश और SOS अभी भी काम कर रहे हैं।',
+    demoGuide: 'डेमो गाइड'
+  }
+};
+
 export const EmergencyScan = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -84,7 +112,8 @@ export const EmergencyScan = () => {
       : 'none';
 
   const [activeEmergency, setActiveEmergency] = useState<Emergency>(initialProtocol);
-  const [language, setLanguage] = useState<'en' | 'hi'>('en');
+  const [language, setLanguage] = useState<'en' | 'hi'>(() => (localStorage.getItem('preferredLang') as 'en' | 'hi') || 'en');
+  const [showLangModal, setShowLangModal] = useState(() => !localStorage.getItem('preferredLang'));
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [chokingPhase, setChokingPhase] = useState<ChokingPhase>('back-blows');
   const [sternumPoint, setSternumPoint] = useState<{ x: number; y: number } | null>(null);
@@ -93,6 +122,13 @@ export const EmergencyScan = () => {
   const [poseError, setPoseError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(true);
   const [scanProgress, setScanProgress] = useState(0);
+
+  
+  const handleSetLanguage = (lang: 'en' | 'hi') => {
+    setLanguage(lang);
+    localStorage.setItem('preferredLang', lang);
+    setShowLangModal(false);
+  };
 
   const handleCameraError = useCallback((msg: string) => setCameraError(msg), []);
 
@@ -264,6 +300,34 @@ export const EmergencyScan = () => {
 
   return (
     <div className="fixed inset-0 z-0 w-full h-screen bg-black text-white overflow-hidden">
+      {/* ── Initial Language Selection Modal ── */}
+      {showLangModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-white/20 rounded-2xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4">
+            <h2 className="text-white text-lg font-bold text-center tracking-wide">
+              Select Language / भाषा चुनें
+            </h2>
+            <p className="text-slate-400 text-xs text-center mb-2">
+              Choose your preferred language for voice and text guidance.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => handleSetLanguage('hi')}
+                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-base"
+              >
+                हिंदी (Hindi)
+              </button>
+              <button
+                onClick={() => handleSetLanguage('en')}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl border border-white/10 transition-all text-base"
+              >
+                English
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Voice engine — re-speaks on every instructionText change */}
       <AudioGuidance text={instructionText} isActive={voiceGuidance} lang={language} />
 
@@ -437,7 +501,7 @@ export const EmergencyScan = () => {
             className="flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-full px-4 py-1.5 text-xs font-semibold hover:bg-slate-900/90 transition-colors shadow-sm text-[13px]"
           >
             <ArrowLeft className="h-4 w-4" />
-            Exit
+            {TRANSLATIONS[language].exit}
           </button>
 
           {activeEmergency !== 'choking' && activeEmergency !== 'burns' && (
@@ -452,7 +516,7 @@ export const EmergencyScan = () => {
 
           
           <button
-            onClick={() => setLanguage(prev => prev === 'en' ? 'hi' : 'en')}
+            onClick={() => handleSetLanguage(language === 'en' ? 'hi' : 'en')}
             className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-white/20 text-xs font-bold text-white tracking-wider backdrop-blur-md active:scale-95 transition-all"
           >
             {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
@@ -473,7 +537,7 @@ export const EmergencyScan = () => {
       {/* ── Error banner ── */}
       {(cameraError || poseError) && (
         <div className="absolute left-4 right-4 top-16 z-50 rounded-2xl border border-amber-500/50 bg-amber-950/80 backdrop-blur-md p-3 text-xs text-amber-100">
-          {cameraError ?? poseError}. Guidance and SOS still work.
+          {cameraError ?? poseError}. {TRANSLATIONS[language].guidanceStillWorks}
         </div>
       )}
 
@@ -494,7 +558,7 @@ export const EmergencyScan = () => {
       {activeEmergency === 'cpr' && (
         <div className="absolute top-36 right-4 z-40 w-28 sm:w-36 rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-black/95 pointer-events-auto">
           <div className="bg-red-600/90 px-2 py-0.5 text-[9px] font-bold tracking-wider text-white text-center uppercase">
-            Demo Guide
+            {TRANSLATIONS[language].demoGuide}
           </div>
           <video
             src="/videos/h.mp4"
@@ -523,28 +587,28 @@ export const EmergencyScan = () => {
                 className="flex flex-col items-center justify-center gap-1 bg-red-600/90 hover:bg-red-500 text-white text-[10px] font-bold py-2 rounded-xl transition-all active:scale-95"
               >
                 <Activity className="h-4 w-4" />
-                CPR
+                {TRANSLATIONS[language].cpr}
               </button>
               <button
                 onClick={() => setActiveEmergency('bleeding')}
                 className="flex flex-col items-center justify-center gap-1 bg-amber-600/90 hover:bg-amber-500 text-white text-[10px] font-bold py-2 rounded-xl transition-all active:scale-95"
               >
                 <AlertTriangle className="h-4 w-4" />
-                Bleeding
+                {TRANSLATIONS[language].bleeding}
               </button>
               <button
                 onClick={() => setActiveEmergency('choking')}
                 className="flex flex-col items-center justify-center gap-1 bg-blue-600/90 hover:bg-blue-500 text-white text-[10px] font-bold py-2 rounded-xl transition-all active:scale-95"
               >
                 <ShieldAlert className="h-4 w-4" />
-                Choking
+                {TRANSLATIONS[language].choking}
               </button>
               <button
                 onClick={() => setActiveEmergency('burns')}
                 className="flex flex-col items-center justify-center gap-1 bg-orange-600/90 hover:bg-orange-500 text-white text-[10px] font-bold py-2 rounded-xl transition-all active:scale-95"
               >
                 <AlertTriangle className="h-4 w-4" />
-                Burns
+                {TRANSLATIONS[language].burns}
               </button>
             </div>
           </div>
@@ -561,7 +625,7 @@ export const EmergencyScan = () => {
         )}
 
         <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-2xl p-3 shadow-2xl">
-          <EmergencyActionPanel activeProtocol={activeEmergency} />
+          <EmergencyActionPanel activeProtocol={activeEmergency} language={language} />
         </div>
       </div>
     </div>

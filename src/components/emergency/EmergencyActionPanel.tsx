@@ -31,8 +31,28 @@ const FRESH_MS = 2 * 60 * 1000;
 
 const MATERNITY_102 = '102'; // Maternity transport
 
-export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeProtocol }: { onEmergencyDetected?: () => void, isPregnancy?: boolean, activeProtocol?: string }) => {
+export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeProtocol, language = 'en' }: { onEmergencyDetected?: () => void, isPregnancy?: boolean, activeProtocol?: string, language?: 'en' | 'hi' }) => {
   const [status, setStatus] = useState<'idle' | 'locating' | 'no-gps'>('idle');
+  
+  const PANEL_UI = {
+    en: {
+      detailsLabel: "Emergency Details / Remark:",
+      tapHint: "Tap chip or type",
+      placeholder: "State condition (e.g. CPR, Bleeding)",
+      chips: ['Cardiac Arrest', 'Bleeding', 'Choking', 'Pregnancy', 'Accident / Trauma'],
+      call108: "📞 Call 108 (Ambulance)",
+      call112: "📞 Call 112 (National SOS)"
+    },
+    hi: {
+      detailsLabel: "आपातकालीन विवरण / टिप्पणी:",
+      tapHint: "चुनें या टाइप करें",
+      placeholder: "स्थिति बताएं (जैसे: हार्ट अटैक, खून बहना)",
+      chips: ['हार्ट अटैक (CPR)', 'रक्तस्राव (Bleeding)', 'दम घुटना (Choking)', 'गर्भावस्था (Pregnancy)', 'दुर्घटना (Accident)'],
+      call108: "📞 108 एम्बुलेंस कॉल",
+      call112: "📞 112 आपातकालीन कॉल"
+    }
+  };
+
   const [emergencyRemark, setEmergencyRemark] = useState<string>('General Medical Emergency');
 
   useEffect(() => {
@@ -108,10 +128,10 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
 
   // Format GPS status badge
   const gpsLabel = gpsReady && fixRef.current
-    ? `● GPS Locked: ${fixRef.current.lat.toFixed(2)}° N, ${fixRef.current.lon.toFixed(2)}° E`
+    ? `${TRANSLATIONS[language].gpsLocked} ${fixRef.current.lat.toFixed(2)}° N, ${fixRef.current.lon.toFixed(2)}° E`
     : status === 'no-gps'
-      ? '○ GPS unavailable'
-      : '◌ Acquiring Satellite Fix…';
+      ? TRANSLATIONS[language].gpsUnavailable
+      : TRANSLATIONS[language].gpsAcquiring;
 
   return (
     <div className="space-y-2.5">
@@ -134,7 +154,7 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
         
         {/* Quick-Select Chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar px-1">
-          {['Cardiac Arrest', 'Bleeding', 'Choking', 'Pregnancy', 'Accident / Trauma'].map((chip) => (
+          {PANEL_UI[language].chips.map((chip) => (
             <button
               key={chip}
               onClick={() => setEmergencyRemark(chip)}
@@ -154,7 +174,7 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
           type="text"
           value={emergencyRemark}
           onChange={(e) => setEmergencyRemark(e.target.value)}
-          placeholder="State condition (e.g. CPR, Bleeding, Accident)"
+          placeholder={PANEL_UI[language].placeholder}
           className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors"
         />
       </div>
@@ -163,7 +183,7 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
         onClick={triggerEmergencySms}
         className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl shadow-lg shadow-red-600/30 active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
       >
-        {status === 'locating' ? '📡 Acquiring GPS…' : '🚨 SOS — Alert 112 & Share Location'}
+        {status === 'locating' ? TRANSLATIONS[language].locating : TRANSLATIONS[language].sosPrefix}
       </button>
 
       {/* Quick-call pills (side-by-side) */}
@@ -172,15 +192,13 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
           onClick={() => openExternal(`tel:${AMBULANCE_108}`)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold rounded-xl transition-colors active:scale-95"
         >
-          📞 Call 108
-          <span className="text-[10px] text-slate-400">(Ambulance)</span>
+          {PANEL_UI[language].call108}
         </button>
         <button
           onClick={() => openExternal(`tel:${NATIONAL_112}`)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold rounded-xl transition-colors active:scale-95"
         >
-          📞 Call 112
-          <span className="text-[10px] text-slate-400">(National SOS)</span>
+          {PANEL_UI[language].call112}
         </button>
         {isPregnancy && (
           <button
