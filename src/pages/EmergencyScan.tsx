@@ -597,90 +597,19 @@ export const EmergencyScan = () => {
         </div>
       )}
 
-      {/* ── Instruction text pill (non-choking/burn modes only) ── */}
-      {activeEmergency !== 'choking' && activeEmergency !== 'burns' && (
-        <div className="absolute top-16 inset-x-4 max-w-sm mx-auto z-40 pointer-events-auto flex flex-col gap-2">
-          <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white px-3 py-1.5 rounded-2xl text-center shadow-lg pointer-events-none">
-            <p className="text-xs font-normal text-slate-200">
+      {/* ── Bottom Panel — Union of Instruction and Action Panel ── */}
+      <div className="absolute bottom-3 inset-x-3 max-w-md mx-auto z-40 bg-slate-950/85 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl flex flex-col gap-2 pointer-events-auto">
+        {/* 1. Instruction Content (Choking / CPR / Bleeding steps) */}
+        {activeEmergency !== 'choking' && activeEmergency !== 'burns' && (
+          <div className="w-full text-slate-100">
+            <p className="text-xs font-semibold text-slate-200 line-clamp-2 text-center">
               {instructionText}
             </p>
           </div>
-        </div>
-      )}
-
-      {/* ── Choking phase switcher removed — now embedded inside the choking screen ── */}
-
-      {/* ── PiP video card — CPR only (choking has its own full layout) ── */}
-      {activeEmergency === 'cpr' && (
-        <div className="absolute top-36 right-4 z-40 w-28 sm:w-36 rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-black/95 pointer-events-auto">
-          <div className="bg-red-600/90 px-2 py-0.5 text-[9px] font-bold tracking-wider text-white text-center uppercase">
-            {TRANSLATIONS[language].demoGuide}
-          </div>
-          <video
-            src="/videos/h.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-20 sm:h-24 object-cover"
-            onError={(e) => {
-              (e.currentTarget as HTMLVideoElement).src = '/h.mp4';
-            }}
-          />
-        </div>
-      )}
-
-      {/* ── Bottom Panel — triage selector / reset + SOS ── */}
-      <div className="absolute bottom-4 inset-x-4 max-w-sm mx-auto z-40 flex flex-col gap-2 pointer-events-auto">
-        {activeEmergency === 'none' ? (
-          <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-2xl p-3 shadow-2xl space-y-2">
-            <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              {language === 'hi' ? 'आपातकालीन प्रकार चुनें' : 'Select Emergency Type'}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setActiveEmergency('cpr')}
-                className="flex flex-col items-center justify-center gap-1 bg-red-600/90 hover:bg-red-500 text-white text-[10px] font-bold py-2 rounded-xl transition-all active:scale-95"
-              >
-                <Activity className="h-4 w-4" />
-                {TRANSLATIONS[language].cpr}
-              </button>
-              <button
-                onClick={() => setActiveEmergency('bleeding')}
-                className="flex flex-col items-center justify-center gap-1 bg-amber-600/90 hover:bg-amber-500 text-white text-[10px] font-bold py-2 rounded-xl transition-all active:scale-95"
-              >
-                <AlertTriangle className="h-4 w-4" />
-                {TRANSLATIONS[language].bleeding}
-              </button>
-              <button
-                onClick={() => setActiveEmergency('choking')}
-                className="flex flex-col items-center justify-center gap-1 bg-blue-600/90 hover:bg-blue-500 text-white text-[10px] font-bold py-2 rounded-xl transition-all active:scale-95"
-              >
-                <ShieldAlert className="h-4 w-4" />
-                {TRANSLATIONS[language].choking}
-              </button>
-              <button
-                onClick={() => setActiveEmergency('burns')}
-                className="flex flex-col items-center justify-center gap-1 bg-orange-600/90 hover:bg-orange-500 text-white text-[10px] font-bold py-2 rounded-xl transition-all active:scale-95"
-              >
-                <AlertTriangle className="h-4 w-4" />
-                {TRANSLATIONS[language].burns}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => {
-              setActiveEmergency('none');
-              setChokingPhase('back-blows'); // reset choking phase on exit
-            }}
-            className="text-[11px] font-semibold text-slate-400 hover:text-white py-1 text-center transition-colors"
-          >
-            {language === 'hi' ? '← प्रोटोकॉल रीसेट करें' : '← Reset Protocol'}
-          </button>
         )}
 
-        <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-2xl p-3 shadow-2xl">
+        {/* 2. Action Panel placed in standard document flow below the text */}
+        <div className="w-full">
           <EmergencyActionPanel activeProtocol={activeEmergency} language={language} />
         </div>
       </div>

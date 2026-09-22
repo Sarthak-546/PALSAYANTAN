@@ -143,15 +143,17 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
     );
   };
 
+  const [isRemarkEditing, setIsRemarkEditing] = useState(false);
+
   // Format GPS status badge
   const gpsLabel = gpsReady && fixRef.current
-    ? `${TRANSLATIONS[language].gpsLocked} ${fixRef.current.lat.toFixed(2)}° N, ${fixRef.current.lon.toFixed(2)}° E`
+    ? `● GPS: ${fixRef.current.lat.toFixed(2)}° N, ${fixRef.current.lon.toFixed(2)}° E`
     : status === 'no-gps'
       ? TRANSLATIONS[language].gpsUnavailable
       : TRANSLATIONS[language].gpsAcquiring;
 
   return (
-    <div className="space-y-2.5">
+    <div className="w-full mt-4 flex flex-col gap-3">
       {/* Warning / info banner */}
       {message && (
         <div className="p-2 bg-amber-950/60 border border-amber-500/40 rounded-xl text-amber-100 text-[11px] backdrop-blur">
@@ -159,77 +161,73 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
         </div>
       )}
 
-      
-      {/* ── Dynamic Remark / Editable Input UI ── */}
-      <div className="space-y-1.5 mb-3">
-        <div className="flex items-center justify-between px-1">
-          <label className="text-[11px] font-semibold tracking-wider text-slate-300 uppercase">
-            {PANEL_UI[language].detailsLabel}
-          </label>
-          <span className="text-[10px] text-slate-400">{PANEL_UI[language].tapHint}</span>
-        </div>
-        
-        {/* Quick-Select Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar px-1">
-          {PANEL_UI[language].chips.map((chip) => (
-            <button
-              key={chip}
-              onClick={() => setEmergencyRemark(chip)}
-              className={`whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors border ${
-                emergencyRemark === chip 
-                  ? 'bg-red-500/20 border-red-500/50 text-red-200' 
-                  : 'bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
-
-        {/* Editable Remark Field */}
-        <input
-          type="text"
-          value={emergencyRemark}
-          onChange={(e) => setEmergencyRemark(e.target.value)}
-          placeholder={PANEL_UI[language].placeholder}
-          className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 transition-colors"
-        />
+      {/* ── Compact Header: Remark Trigger + GPS ── */}
+      <div className="flex items-center justify-between gap-2">
+        <button
+          onClick={() => setIsRemarkEditing(!isRemarkEditing)}
+          className="flex-1 flex items-center justify-between bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-[10px] text-slate-300 active:scale-[0.98] transition-all"
+        >
+          <span className="truncate">⚡ {PANEL_UI[language].detailsLabel.split('/')[0].trim()}: {emergencyRemark}</span>
+          <span className="opacity-70">✎</span>
+        </button>
       </div>
-      {/* Primary SOS button — always tappable, never locked */}
-      <button
-        onClick={triggerEmergencySms}
-        className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-2xl shadow-lg shadow-red-600/30 active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-      >
-        {status === 'locating' ? TRANSLATIONS[language].locating : TRANSLATIONS[language].sosPrefix}
-      </button>
 
-      {/* Quick-call pills (side-by-side) */}
-      <div className="flex gap-2 flex-wrap">
+      {isRemarkEditing && (
+        <div className="space-y-2 p-2 bg-slate-900/50 rounded-xl border border-slate-700/50">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            {PANEL_UI[language].chips.map((chip) => (
+              <button
+                key={chip}
+                onClick={() => setEmergencyRemark(chip)}
+                className={`whitespace-nowrap px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors border ${
+                  emergencyRemark === chip
+                    ? 'bg-red-500/20 border-red-500/50 text-red-200'
+                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={emergencyRemark}
+            onChange={(e) => setEmergencyRemark(e.target.value)}
+            placeholder={PANEL_UI[language].placeholder}
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-red-500 transition-colors"
+          />
+        </div>
+      )}
+
+      {/* ── Compact SOS + Call Grid ── */}
+      <div className="w-full flex items-center gap-2">
         <button
-          onClick={() => openExternal(`tel:${AMBULANCE_108}`)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold rounded-xl transition-colors active:scale-95"
+          onClick={triggerEmergencySms}
+          className="flex-[3] py-2.5 px-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-red-600/30 transition-all"
         >
-          {PANEL_UI[language].call108}
+          <span className="animate-pulse">🚨</span>
+          <span className="truncate">{TRANSLATIONS[language].sosPrefix.split(' - ')[0]}</span>
         </button>
-        <button
-          onClick={() => openExternal(`tel:${NATIONAL_112}`)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-semibold rounded-xl transition-colors active:scale-95"
+
+        <a
+          href={`tel:${AMBULANCE_108}`}
+          className="flex-[1] py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 active:scale-95 text-emerald-400 font-bold text-[10px] rounded-xl flex items-center justify-center gap-1 transition-all"
+          title="Call 108 Ambulance"
         >
-          {PANEL_UI[language].call112}
-        </button>
-        {isPregnancy && (
-          <button
-            onClick={() => openExternal(`tel:${MATERNITY_102}`)}
-            className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-fuchsia-600/20 hover:bg-fuchsia-600/30 border border-fuchsia-500/30 text-fuchsia-100 text-xs font-semibold rounded-xl transition-colors active:scale-95 mt-1"
-          >
-            {language === 'hi' ? '📞 102 कॉल' : '📞 Call 102'}
-            <span className="text-[10px] text-fuchsia-300">{language === 'hi' ? '(मातृत्व परिवहन)' : '(Maternity Transport)'}</span>
-          </button>
-        )}
+          <span>📞 108</span>
+        </a>
+
+        <a
+          href={`tel:${NATIONAL_112}`}
+          className="flex-[1] py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 active:scale-95 text-red-400 font-bold text-[10px] rounded-xl flex items-center justify-center gap-1 transition-all"
+          title="Call 112 Emergency"
+        >
+          <span>📞 112</span>
+        </a>
       </div>
 
       {/* GPS status badge */}
-      <div className="text-center text-[11px] text-slate-400 px-1">
+      <div className="text-[10px] text-slate-400 text-center tracking-tight">
         {gpsLabel}
       </div>
     </div>
