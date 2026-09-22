@@ -7,6 +7,7 @@ import { AudioGuidance } from '../components/ar/AudioGuidance';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { t } from '../data/emergencyScenarios';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { useScenario } from '../hooks/useScenario';
 import { ROUTES, arFirstAidPath } from '../routes';
 import type { EmergencyScenario } from '../data/emergencyScenarios';
@@ -34,7 +35,9 @@ const SEVERITY_STYLES: Record<EmergencyScenario['severity'], string> = {
       scenarioNotFoundText: 'The requested emergency scenario could not be loaded.',
       returnToLibrary: 'Return to Library',
       videoLabel: 'Technique Video Demonstration',
-      offlineVideo: 'OFFLINE VIDEO'
+      offlineVideo: 'OFFLINE VIDEO',
+      doTitle: 'DO',
+      dontTitle: "DON'T"
     },
     hi: {
       library: 'लाइब्रेरी',
@@ -51,12 +54,14 @@ const SEVERITY_STYLES: Record<EmergencyScenario['severity'], string> = {
       scenarioNotFoundText: 'अनुरोधित स्थिति लोड नहीं की जा सकी।',
       returnToLibrary: 'लाइब्रेरी में वापस आएं',
       videoLabel: 'तकनीकी वीडियो प्रदर्शन',
-      offlineVideo: 'ऑफ़लाइन वीडियो'
+      offlineVideo: 'ऑफ़लाइन वीडियो',
+      doTitle: 'क्या करें',
+      dontTitle: 'क्या न करें'
     }
   };
 
 export const FirstAidDetail = () => {
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
   const { voiceGuidance, setVoiceGuidance } = useEmergencySession();
   const { scenario } = useScenario();
@@ -90,7 +95,7 @@ export const FirstAidDetail = () => {
           onClick={() => navigate(ROUTES.firstAid)}
           className="px-5 py-2.5 bg-gray-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl hover:bg-gray-800 dark:hover:bg-white transition-colors"
         >
-          Return to Library
+          {TRANSLATIONS[language].returnToLibrary}
         </button>
       </div>
     );
@@ -123,14 +128,23 @@ export const FirstAidDetail = () => {
             {scenario.severity}
           </span>
 
-          <button
-            onClick={() => setVoiceGuidance(!voiceGuidance)}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-              voiceGuidance ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400'
-            }`}
-          >
-            {voiceGuidance ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setVoiceGuidance(!voiceGuidance)}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+                voiceGuidance ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400'
+              }`}
+            >
+              {voiceGuidance ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            </button>
+            <ThemeToggle className="scale-90" />
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-white tracking-wider active:scale-95 transition-all"
+            >
+              {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
+            </button>
+          </div>
         </div>
 
         {/* Progress bar */}
@@ -301,7 +315,7 @@ export const FirstAidDetail = () => {
                 showDos ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-b-2 border-green-600 dark:border-green-500' : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 bg-gray-50/50 dark:bg-slate-900/50'
               }`}
             >
-              DO
+              {TRANSLATIONS[language].doTitle}
             </button>
             <button
               onClick={() => setShowDos(false)}
@@ -309,7 +323,7 @@ export const FirstAidDetail = () => {
                 !showDos ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-b-2 border-red-600 dark:border-red-500' : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 bg-gray-50/50 dark:bg-slate-900/50'
               }`}
             >
-              DON&apos;T
+              {TRANSLATIONS[language].dontTitle}
             </button>
           </div>
           <ul className="px-5 py-5 space-y-3">
@@ -342,7 +356,7 @@ export const FirstAidDetail = () => {
             onClick={() => navigate(ROUTES.firstAid)}
             className="w-full text-sm font-medium text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 py-2 transition-colors"
           >
-            ← Back to {TRANSLATIONS[language].library}
+            {TRANSLATIONS[language].backToLibrary}
           </button>
         </div>
       </main>

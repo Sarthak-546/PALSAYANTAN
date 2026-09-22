@@ -34,6 +34,23 @@ const MATERNITY_102 = '102'; // Maternity transport
 export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeProtocol, language = 'en' }: { onEmergencyDetected?: () => void, isPregnancy?: boolean, activeProtocol?: string, language?: 'en' | 'hi' }) => {
   const [status, setStatus] = useState<'idle' | 'locating' | 'no-gps'>('idle');
   
+  const TRANSLATIONS = {
+    en: {
+      gpsLocked: "GPS Locked:",
+      gpsUnavailable: "GPS Unavailable",
+      gpsAcquiring: "Acquiring GPS...",
+      locating: "Locating...",
+      sosPrefix: "🚨 SOS - ALERT 112 & SHARE LOCATION"
+    },
+    hi: {
+      gpsLocked: "जीपीएस लॉक:",
+      gpsUnavailable: "जीपीएस अनुपलब्ध",
+      gpsAcquiring: "जीपीएस खोज रहा है...",
+      locating: "स्थान खोज रहा है...",
+      sosPrefix: "🚨 112 को आपातकालीन सूचना व स्थान भेजें"
+    }
+  };
+
   const PANEL_UI = {
     en: {
       detailsLabel: "Emergency Details / Remark:",
@@ -58,25 +75,25 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
   useEffect(() => {
     switch (activeProtocol) {
       case 'cpr':
-        setEmergencyRemark("Cardiac Arrest / Unresponsive CPR");
+        setEmergencyRemark(language === 'hi' ? "हार्ट अटैक (CPR)" : "Cardiac Arrest / Unresponsive CPR");
         break;
       case 'bleeding':
-        setEmergencyRemark("Severe Hemorrhage / Active Bleeding");
+        setEmergencyRemark(language === 'hi' ? "रक्तस्राव (Bleeding)" : "Severe Hemorrhage / Active Bleeding");
         break;
       case 'choking':
-        setEmergencyRemark("Choking / Airway Obstruction");
+        setEmergencyRemark(language === 'hi' ? "दम घुटना (Choking)" : "Choking / Airway Obstruction");
         break;
       case 'pregnancy':
-        setEmergencyRemark("Obstetric / Maternal Emergency");
+        setEmergencyRemark(language === 'hi' ? "गर्भावस्था आपातकाल" : "Obstetric / Maternal Emergency");
         break;
       case 'burns':
-        setEmergencyRemark("Severe Thermal Burn Injury");
+        setEmergencyRemark(language === 'hi' ? "गंभीर जलन" : "Severe Thermal Burn Injury");
         break;
       default:
-        setEmergencyRemark("General Medical Trauma");
+        setEmergencyRemark(language === 'hi' ? "सामान्य चिकित्सा आपातकाल" : "General Medical Trauma");
         break;
     }
-  }, [activeProtocol]);
+  }, [activeProtocol, language]);
   const [gpsReady, setGpsReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const fixRef = useRef<Fix | null>(null);
@@ -147,9 +164,9 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
       <div className="space-y-1.5 mb-3">
         <div className="flex items-center justify-between px-1">
           <label className="text-[11px] font-semibold tracking-wider text-slate-300 uppercase">
-            Emergency Details / Remark:
+            {PANEL_UI[language].detailsLabel}
           </label>
-          <span className="text-[10px] text-slate-400">Tap chip or type</span>
+          <span className="text-[10px] text-slate-400">{PANEL_UI[language].tapHint}</span>
         </div>
         
         {/* Quick-Select Chips */}
@@ -205,8 +222,8 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
             onClick={() => openExternal(`tel:${MATERNITY_102}`)}
             className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-fuchsia-600/20 hover:bg-fuchsia-600/30 border border-fuchsia-500/30 text-fuchsia-100 text-xs font-semibold rounded-xl transition-colors active:scale-95 mt-1"
           >
-            📞 Call 102
-            <span className="text-[10px] text-fuchsia-300">(Maternity Transport)</span>
+            {language === 'hi' ? '📞 102 कॉल' : '📞 Call 102'}
+            <span className="text-[10px] text-fuchsia-300">{language === 'hi' ? '(मातृत्व परिवहन)' : '(Maternity Transport)'}</span>
           </button>
         )}
       </div>

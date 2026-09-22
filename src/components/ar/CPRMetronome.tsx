@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface CPRMetronomeProps {
   /** When true the 110 BPM click track plays via the Web Audio API. */
@@ -30,6 +31,7 @@ function scheduleTick(ctx: AudioContext, when: number) {
  * Syncs with the hardware vibration motor via navigator.vibrate.
  */
 export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
+  const { language } = useLanguage();
   const ctxRef = useRef<AudioContext | null>(null);
   const intervalRef = useRef<number>(0);
   const [hasVibrate, setHasVibrate] = useState(false);
@@ -100,7 +102,7 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
           }}
           className="px-5 py-2.5 bg-red-600 hover:bg-red-500 rounded-full text-white font-bold shadow-[0_0_15px_rgba(220,38,38,0.6)] border border-red-400 active:scale-95 transition-transform"
         >
-          Start CPR Pacing
+          {language === 'en' ? 'Start CPR Pacing' : 'सीपीआर पेसिंग शुरू करें'}
         </button>
       </div>
     );
@@ -110,7 +112,7 @@ export const CPRMetronome = ({ isActive }: CPRMetronomeProps) => {
     <div className="absolute top-28 inset-x-4 max-w-sm mx-auto z-40 pointer-events-none flex justify-center">
       <span className="text-[10px] sm:text-[11px] font-mono tracking-wider font-bold text-emerald-400 bg-emerald-950/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-500/30 shadow-lg flex items-center">
         <span className="mr-1.5 text-base leading-none">📳</span>
-        Haptic Pulse Active
+        {language === 'en' ? 'PUSH TO THE BEAT (110 BPM)' : 'बीट के साथ दबाएं (110 BPM)'}
       </span>
     </div>
   );

@@ -64,28 +64,92 @@ function normalizedToPixels(nx: number, ny: number, video: HTMLVideoElement) {
 
 const TRANSLATIONS = {
   en: {
-    selectType: '{TRANSLATIONS[language].selectType}',
-    resetProtocol: '{TRANSLATIONS[language].resetProtocol}',
-    cpr: 'CPR',
-    bleeding: 'Bleeding',
-    choking: 'Choking',
-    burns: 'Burns',
-    exit: 'Exit',
-    liveProtocol: '{TRANSLATIONS[language].liveProtocol}',
-    guidanceStillWorks: 'Guidance and SOS still work.',
-    demoGuide: '{TRANSLATIONS[language].demoGuide}'
+    back: "Exit",
+    exit: "Exit",
+    torch: "Torch",
+    cprBtn: "CPR",
+    cpr: "CPR",
+    bleedingBtn: "Bleeding",
+    bleeding: "Bleeding",
+    chokingBtn: "Choking",
+    choking: "Choking",
+    burnsBtn: "Burns",
+    burns: "Burns",
+    cprPrompt: "Cardiac arrest protocol active. Place hands on center target. Push hard to the beat.",
+    bleedingFound: "Active bleeding detected! Apply firm, direct pressure with clean cloth immediately.",
+    bleedingScanning: "No injury spotted. Scanning for wounds...",
+    bleedingTarget: "🔴 APPLY DIRECT PRESSURE HERE",
+    chokingBlows: "Deliver 5 sharp back blows between shoulder blades.",
+    chokingThrusts: "Place fist above navel and pull inward and upward 5 times.",
+    sosBtn: "🚨 SOS - ALERT 112 & SHARE LOCATION",
+    call108: "📞 Call 108 (Ambulance)",
+    call112: "📞 Call 112 (National SOS)",
+    call102: "🚑 Call 102 (Maternity)",
+    guidanceStillWorks: "Guidance and SOS still work.",
+    demoGuide: "DEMO GUIDE",
+    chokingBtn1: "1. 5 Back Blows",
+    chokingBtn2: "2. 5 Stomach Thrusts",
+    chokingTitle1: "1. Deliver 5 Firm Back Blows",
+    chokingDesc1: [
+      { highlight: "Position:", text: "Stand to the side and slightly behind the victim. Support their chest with one hand." },
+      { highlight: "Posture:", text: "Lean the victim forward so the dislodged object falls out of the mouth, not back down the airway." },
+      { highlight: "Action:", text: "Deliver up to 5 sharp, forceful blows between the shoulder blades using the heel of your hand." },
+      { highlight: "Check:", text: "Pause after each blow to see if the airway is cleared." }
+    ],
+    chokingTitle2: "2. Deliver 5 Inward & Upward Thrusts",
+    chokingDesc2: [
+      { highlight: "Position:", text: "Stand behind victim and wrap both arms around their upper waist." },
+      { highlight: "Fist Placement:", text: "Make a fist with one hand; place the thumb side just above the belly button (well below ribcage)." },
+      { highlight: "Grip & Thrust:", text: "Grasp fist with your other hand. Pull sharply inward and upward 5 times." },
+      { highlight: "Repeat Cycle:", text: "Alternate 5 back blows and 5 thrusts until the obstruction is cleared." }
+    ],
+    chokingAlert: "If Victim Becomes Unresponsive:",
+    chokingAlertDesc: "Lower them carefully to the ground, call 112 immediately, and start CPR compressions.",
+    analyze: "Analyzing scene. Please select the emergency type below."
   },
   hi: {
-    selectType: 'आपातकालीन प्रकार चुनें',
-    resetProtocol: '← प्रोटोकॉल रीसेट करें',
-    cpr: 'सीपीआर',
-    bleeding: 'रक्तस्राव (Bleeding)',
-    choking: 'दम घुटना',
-    burns: 'जलना',
-    exit: 'बाहर जाएं',
-    liveProtocol: 'लाइव AR प्रोटोकॉल',
-    guidanceStillWorks: 'निर्देश और SOS अभी भी काम कर रहे हैं।',
-    demoGuide: 'डेमो गाइड'
+    back: "बाहर निकलें",
+    exit: "बाहर निकलें",
+    torch: "टॉर्च",
+    cprBtn: "सीपीआर",
+    cpr: "सीपीआर",
+    bleedingBtn: "रक्तस्राव",
+    bleeding: "रक्तस्राव",
+    chokingBtn: "दम घुटना",
+    choking: "दम घुटना",
+    burnsBtn: "जलना",
+    burns: "जलना",
+    cprPrompt: "कार्डियक अरेस्ट प्रोटोकॉल सक्रिय। छाती के लाल निशान पर दोनों हाथ रखें और बीट के साथ दबाएं।",
+    bleedingFound: "रक्तस्राव का पता चला! घाव पर साफ कपड़े से तुरंत लगातार दबाव बनाएं।",
+    bleedingScanning: "कोई चोट नहीं दिखी। घाव की जांच जारी है...",
+    bleedingTarget: "🔴 यहाँ सीधा दबाव बनाएं",
+    chokingBlows: "पीड़ित को आगे झुकाएं। पीठ पर कंधों के बीच 5 बार थपथपाएं।",
+    chokingThrusts: "नाभि के ऊपर मुट्ठी रखें और 5 बार अंदर और ऊपर की ओर झटका दें।",
+    sosBtn: "🚨 112 को आपातकालीन सूचना व स्थान भेजें",
+    call108: "📞 108 एम्बुलेंस कॉल",
+    call112: "📞 112 आपातकालीन कॉल",
+    call102: "🚑 102 मातृत्व सेवा",
+    guidanceStillWorks: "निर्देश और SOS अभी भी काम कर रहे हैं।",
+    demoGuide: "डेमो गाइड",
+    chokingBtn1: "1. 5 पीठ थपथपाएं",
+    chokingBtn2: "2. 5 पेट के धक्के",
+    chokingTitle1: "1. 5 बार पीठ थपथपाएं",
+    chokingDesc1: [
+      { highlight: "स्थिति:", text: "पीड़ित के बगल में और थोड़ा पीछे खड़े हों। एक हाथ से उनकी छाती को सहारा दें।" },
+      { highlight: "मुद्रा:", text: "पीड़ित को आगे की ओर झुकाएं ताकि फंसी हुई वस्तु मुंह से बाहर गिरे।" },
+      { highlight: "क्रिया:", text: "अपने हाथ की एड़ी का उपयोग करके कंधे के ब्लेड के बीच 5 तेज, जोरदार प्रहार करें।" },
+      { highlight: "जांच:", text: "हवा का मार्ग साफ़ हुआ या नहीं, यह देखने के लिए प्रत्येक प्रहार के बाद रुकें।" }
+    ],
+    chokingTitle2: "2. 5 बार पेट में अंदर और ऊपर धक्के दें",
+    chokingDesc2: [
+      { highlight: "स्थिति:", text: "पीड़ित के पीछे खड़े हो जाएं और दोनों हाथों को उनकी ऊपरी कमर के चारों ओर लपेट लें।" },
+      { highlight: "मुट्ठी:", text: "एक हाथ से मुट्ठी बनाएं; अंगूठे के हिस्से को नाभि के ठीक ऊपर रखें।" },
+      { highlight: "धक्का:", text: "दूसरे हाथ से मुट्ठी को पकड़ें। 5 बार तेजी से अंदर और ऊपर की ओर धक्का दें।" },
+      { highlight: "दोहराएं:", text: "रुकावट साफ होने तक 5 पीठ थपथपाहट और 5 धक्के बारी-बारी से दें।" }
+    ],
+    chokingAlert: "यदि पीड़ित बेहोश हो जाता है:",
+    chokingAlertDesc: "उन्हें सावधानी से जमीन पर लिटा दें, तुरंत 112 पर कॉल करें, और सीपीआर कम्प्रेशन शुरू करें।",
+    analyze: "स्थिति का विश्लेषण किया जा रहा है। कृपया नीचे आपातकालीन प्रकार चुनें।"
   }
 };
 
@@ -271,17 +335,15 @@ export const EmergencyScan = () => {
   const [instructionText, setInstructionText] = useState('');
 
   useEffect(() => {
-    let text = language === 'en' 
-      ? 'Analyzing scene. Please select the emergency type below.' 
+    let text = language === 'en'
+      ? 'Analyzing scene. Please select the emergency type below.'
       : 'स्थिति का विश्लेषण किया जा रहा है। कृपया नीचे आपातकालीन प्रकार चुनें।';
     if (activeEmergency === 'cpr') {
-      text = language === 'en' 
-        ? 'Cardiac arrest protocol. Place hands on the target.' 
-        : 'कार्डियक अरेस्ट प्रोटोकॉल। लक्ष्य पर हाथ रखें।';
+      text = TRANSLATIONS[language].cprPrompt;
     } else if (activeEmergency === 'bleeding') {
       text = woundPoint
-        ? (language === 'en' ? 'Active hemorrhage detected. Apply firm direct pressure to the highlighted area.' : 'रक्तस्राव का पता चला। हाइलाइट किए गए क्षेत्र पर सीधा दबाव डालें।')
-        : (language === 'en' ? 'No injury spotted. Scanning for wounds...' : 'कोई चोट नहीं दिखी। घावों के लिए स्कैन किया जा रहा है...');
+        ? TRANSLATIONS[language].bleedingFound
+        : TRANSLATIONS[language].bleedingScanning;
     } else if (activeEmergency === 'choking') {
       text = CHOKING_PHASE_INSTRUCTION[chokingPhase][language];
     } else if (activeEmergency === 'burns') {
@@ -346,7 +408,7 @@ export const EmergencyScan = () => {
       {activeEmergency === 'bleeding' && (
         <div className="absolute top-16 right-3 sm:right-4 z-40 w-44 sm:w-56 md:w-64 rounded-2xl overflow-hidden border-2 border-red-500/80 shadow-2xl bg-black/95 backdrop-blur-md pointer-events-auto">
           <div className="bg-red-600/90 px-2 py-0.5 text-[10px] sm:text-xs font-bold tracking-wider text-white text-center uppercase">
-            Direct Pressure Guide
+            {language === 'hi' ? 'दबाव गाइड' : 'Direct Pressure Guide'}
           </div>
           <video
             src="/videos/press2.mp4"
@@ -388,7 +450,7 @@ export const EmergencyScan = () => {
                 <div className="absolute inset-2 rounded-full border-2 border-amber-500 bg-amber-500/20" />
               </div>
               <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white bg-amber-600 px-3 py-1 rounded-full shadow-lg border border-amber-400">
-                APPLY PRESSURE
+                {language === 'hi' ? 'दबाव डालें' : 'APPLY PRESSURE'}
               </span>
             </div>
           )}
@@ -407,7 +469,7 @@ export const EmergencyScan = () => {
                   : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              1. 5 Back Blows
+              {TRANSLATIONS[language].chokingBtn1}
             </button>
             <button
               onClick={() => setChokingPhase('abdominal-thrusts')}
@@ -417,14 +479,17 @@ export const EmergencyScan = () => {
                   : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              2. 5 Stomach Thrusts
+              {TRANSLATIONS[language].chokingBtn2}
             </button>
           </div>
 
           {/* ── BIG Centred Video Container ── */}
           <div className="max-w-2xl w-full mx-auto max-h-[55vh] flex-shrink-0 flex items-center justify-center rounded-2xl overflow-hidden border border-gray-200 dark:border-white/20 bg-gray-100 dark:bg-black/90 shadow-2xl relative mb-4 transition-colors">
             <div className="absolute top-0 inset-x-0 z-10 bg-cyan-600/90 dark:bg-cyan-700/90 px-2 py-1 text-[10px] font-bold tracking-widest text-white text-center uppercase">
-              {CHOKING_PHASE_BADGE[chokingPhase]}
+              {language === 'hi'
+                ? (chokingPhase === 'back-blows' ? 'स्टेप गाइड: पीठ थपथपाएं' : 'स्टेप गाइड: पेट के धक्के')
+                : CHOKING_PHASE_BADGE[chokingPhase]
+              }
             </div>
             <video
               ref={chokingVideoRef}
@@ -447,22 +512,20 @@ export const EmergencyScan = () => {
           <div className="max-w-2xl mx-auto w-full flex-shrink-0 flex flex-col gap-3">
             {chokingPhase === 'back-blows' ? (
               <div className="bg-white/90 dark:bg-slate-900/90 border border-gray-200 dark:border-cyan-500/30 rounded-2xl p-4 sm:p-5 transition-colors shadow-sm dark:shadow-none">
-                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white mb-3">1. Deliver 5 Firm Back Blows</h3>
+                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white mb-3">{TRANSLATIONS[language].chokingTitle1}</h3>
                 <ul className="space-y-2 text-xs sm:text-sm text-gray-600 dark:text-slate-300">
-                  <li><strong className="text-cyan-600 dark:text-cyan-400">Position:</strong> Stand to the side and slightly behind the victim. Support their chest with one hand.</li>
-                  <li><strong className="text-cyan-600 dark:text-cyan-400">Posture:</strong> Lean the victim forward so the dislodged object falls out of the mouth, not back down the airway.</li>
-                  <li><strong className="text-cyan-600 dark:text-cyan-400">Action:</strong> Deliver up to 5 sharp, forceful blows between the shoulder blades using the heel of your hand.</li>
-                  <li><strong className="text-cyan-600 dark:text-cyan-400">Check:</strong> Pause after each blow to see if the airway is cleared.</li>
+                  {(TRANSLATIONS[language].chokingDesc1 as any[]).map((item, idx) => (
+                    <li key={idx}><strong className="text-cyan-600 dark:text-cyan-400">{item.highlight}</strong> {item.text}</li>
+                  ))}
                 </ul>
               </div>
             ) : (
               <div className="bg-white/90 dark:bg-slate-900/90 border border-gray-200 dark:border-cyan-500/30 rounded-2xl p-4 sm:p-5 transition-colors shadow-sm dark:shadow-none">
-                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white mb-3">2. Deliver 5 Inward & Upward Thrusts</h3>
+                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white mb-3">{TRANSLATIONS[language].chokingTitle2}</h3>
                 <ul className="space-y-2 text-xs sm:text-sm text-gray-600 dark:text-slate-300">
-                  <li><strong className="text-cyan-600 dark:text-cyan-400">Position:</strong> Stand behind victim and wrap both arms around their upper waist.</li>
-                  <li><strong className="text-cyan-600 dark:text-cyan-400">Fist Placement:</strong> Make a fist with one hand; place the thumb side just above the belly button (well below ribcage).</li>
-                  <li><strong className="text-cyan-600 dark:text-cyan-400">Grip & Thrust:</strong> Grasp fist with your other hand. Pull sharply inward and upward 5 times.</li>
-                  <li><strong className="text-cyan-600 dark:text-cyan-400">Repeat Cycle:</strong> Alternate 5 back blows and 5 thrusts until the obstruction is cleared.</li>
+                  {(TRANSLATIONS[language].chokingDesc2 as any[]).map((item, idx) => (
+                    <li key={idx}><strong className="text-cyan-600 dark:text-cyan-400">{item.highlight}</strong> {item.text}</li>
+                  ))}
                 </ul>
               </div>
             )}
@@ -471,7 +534,7 @@ export const EmergencyScan = () => {
             <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 rounded-xl p-3 flex items-start gap-2 transition-colors">
               <span className="text-lg leading-none mt-0.5">⚠️</span>
               <p className="text-xs sm:text-sm text-red-800 dark:text-red-100 font-medium leading-relaxed">
-                <strong className="text-red-600 dark:text-red-400">If Victim Becomes Unresponsive:</strong> Lower them carefully to the ground, call 112 immediately, and start CPR compressions.
+                <strong className="text-red-600 dark:text-red-400">{TRANSLATIONS[language].chokingAlert}</strong> {TRANSLATIONS[language].chokingAlertDesc}
               </p>
             </div>
           </div>
@@ -516,8 +579,6 @@ export const EmergencyScan = () => {
           >
             {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
           </button>
-          
-          <ThemeToggle variant="glass" />
         </div>
 
         <span className="pointer-events-none flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide text-white shadow-sm">
@@ -525,7 +586,7 @@ export const EmergencyScan = () => {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
           </span>
-          LIVE AR PROTOCOL
+          {language === 'hi' ? 'लाइव AR प्रोटोकॉल' : 'LIVE AR PROTOCOL'}
         </span>
       </div>
 
@@ -574,7 +635,7 @@ export const EmergencyScan = () => {
         {activeEmergency === 'none' ? (
           <div className="bg-slate-950/80 backdrop-blur-md border border-white/10 text-white rounded-2xl p-3 shadow-2xl space-y-2">
             <p className="text-center text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              Select Emergency Type
+              {language === 'hi' ? 'आपातकालीन प्रकार चुनें' : 'Select Emergency Type'}
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -615,7 +676,7 @@ export const EmergencyScan = () => {
             }}
             className="text-[11px] font-semibold text-slate-400 hover:text-white py-1 text-center transition-colors"
           >
-            ← Reset Protocol
+            {language === 'hi' ? '← प्रोटोकॉल रीसेट करें' : '← Reset Protocol'}
           </button>
         )}
 

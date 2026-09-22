@@ -81,7 +81,7 @@ export const AudioGuidance = ({
     
     if (lang === 'hi') {
       utterance.lang = 'hi-IN';
-      utterance.rate = 0.9;
+      utterance.rate = 0.88;
       utterance.pitch = 1.0;
     } else {
       utterance.lang = 'en-US';

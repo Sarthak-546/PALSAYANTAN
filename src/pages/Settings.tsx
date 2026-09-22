@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '../components/ui/Button';
 import { ToggleSwitch } from '../components/ui/ToggleSwitch';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 
 export const Settings = () => {
   const navigate = useNavigate();
+  const { language, setLanguage } = useLanguage();
   const {
     demoMode,
     setDemoMode,
@@ -49,16 +52,25 @@ export const Settings = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
             SETTINGS
           </h1>
-          <Button
-            variant="outline"
-            onClick={() => navigate('/')}
-            className="text-sm"
-          >
-            Home
-          </Button>
+          <div className="flex items-center space-x-2">
+            <ThemeToggle />
+            <button
+                onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-white tracking-wider active:scale-95 transition-all"
+            >
+                {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
+            </button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/')}
+              className="text-sm"
+            >
+              Home
+            </Button>
+          </div>
         </div>
 
         {/* Demo Mode */}

@@ -1,22 +1,18 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
-import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vite.dev/config/
 export default defineConfig({
-  optimizeDeps: {
-    exclude: ['@mediapipe/pose', '@mediapipe/camera_utils']
-  },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'videos/*.mp4', 'robots.txt'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'images/**/*.png', 'sounds/**/*.mp3'],
       manifest: {
-        name: 'AR Emergency First Aid Assistant',
+        name: 'AR Emergency Assistant',
         short_name: 'FirstAid AR',
-        description: 'Offline AR emergency triage and CPR assistant',
-        theme_color: '#020617',
+        description: 'Offline-first AR emergency and first-aid assistant.',
+        theme_color: '#020617', // slate-950
         background_color: '#020617',
         display: 'standalone',
         orientation: 'portrait',
@@ -29,44 +25,16 @@ export default defineConfig({
           {
             src: '/icon-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp4}'],
-        maximumFileSizeToCacheInBytes: 10485760, // 10 MB
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'mediapipe-cache',
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /.*\.mp4$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'video-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        // Aggressively cache all JS, CSS, HTML, images, and WASM files for offline CV
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,mp3}'],
+        maximumFileSizeToCacheInBytes: 5000000, // 5MB limit to allow WASM models
       }
     })
-  ],
-})
+  ]
+});
