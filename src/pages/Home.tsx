@@ -157,7 +157,7 @@ export const Home = () => {
             <Heart className="w-5 h-5 text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform drop-shadow-sm" />
             <div>
               <p className="text-xs sm:text-sm font-bold text-red-900 dark:text-red-100 mb-0.5">{HOME_UI[language].cprTitle}</p>
-              <p className="text-[9px] sm:text-[10px] text-red-700 dark:text-red-300/70 font-medium leading-tight hidden sm:block">{HOME_UI[language].cprDesc}</p>
+              <p className="text-[9px] sm:text-[10px] text-red-700 dark:text-red-300/70 font-medium leading-tight">{HOME_UI[language].cprDesc}</p>
             </div>
           </button>
 
@@ -168,7 +168,7 @@ export const Home = () => {
             <Droplet className="w-5 h-5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform drop-shadow-sm" />
             <div>
               <p className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-100 mb-0.5">{HOME_UI[language].bleedingTitle}</p>
-              <p className="text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-300/70 font-medium leading-tight hidden sm:block">{HOME_UI[language].bleedingDesc}</p>
+              <p className="text-[9px] sm:text-[10px] text-amber-700 dark:text-amber-300/70 font-medium leading-tight">{HOME_UI[language].bleedingDesc}</p>
             </div>
           </button>
 
@@ -179,7 +179,7 @@ export const Home = () => {
             <ShieldAlert className="w-5 h-5 text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform drop-shadow-sm" />
             <div>
               <p className="text-xs sm:text-sm font-bold text-cyan-900 dark:text-cyan-100 mb-0.5">{HOME_UI[language].chokingTitle}</p>
-              <p className="text-[9px] sm:text-[10px] text-cyan-700 dark:text-cyan-300/70 font-medium leading-tight hidden sm:block">{HOME_UI[language].chokingDesc}</p>
+              <p className="text-[9px] sm:text-[10px] text-cyan-700 dark:text-cyan-300/70 font-medium leading-tight">{HOME_UI[language].chokingDesc}</p>
             </div>
           </button>
 

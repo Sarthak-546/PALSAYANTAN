@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { t } from '../data/emergencyScenarios';
 import { Button } from '../components/ui/Button';
 import { AROverlay } from '../components/ar/AROverlay';
 import { InstructionOverlay } from '../components/ar/InstructionOverlay';
@@ -19,6 +21,7 @@ type Tracking = 'SEARCHING_FOR_TARGET' | 'LOCKED';
 export const ArFirstAid = () => {
   const navigate = useNavigate();
   const { demoMode, voiceGuidance, setVoiceGuidance } = useEmergencySession();
+  const { language } = useLanguage();
 
   // Works for /ar-first-aid?type=cpr, /ar-first-aid/cpr, and bare /ar-first-aid (defaults to CPR)
   const { scenario } = useScenario('cpr');
@@ -26,7 +29,6 @@ export const ArFirstAid = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [trackingState, setTrackingState] = useState<Tracking>('SEARCHING_FOR_TARGET');
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [sternumPoint, setSternumPoint] = useState<{x: number, y: number} | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -45,8 +47,8 @@ export const ArFirstAid = () => {
   // Simulated AR tracking: re-acquire the target on every step.
   useEffect(() => {
     setTrackingState('SEARCHING_FOR_TARGET');
-    const t = window.setTimeout(() => setTrackingState('LOCKED'), 1500);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setTrackingState('LOCKED'), 1500);
+    return () => window.clearTimeout(timer);
   }, [scenarioId, currentStep]);
 
   if (!scenario) {
@@ -68,7 +70,11 @@ export const ArFirstAid = () => {
 
   return (
     <div className="relative w-full overflow-hidden bg-gray-900" style={{ height: '100dvh' }}>
-      <AudioGuidance text={step.audioText ?? step.instruction} isActive={voiceGuidance} />
+      <AudioGuidance
+        text={t(step.audioText ?? step.instruction, language)}
+        isActive={voiceGuidance}
+        lang={language}
+      />
 
       {/* CPR Feedback Display (only for CPR scenario) */}
       {scenario.id === 'cpr' && trackingState === 'LOCKED' && (
@@ -97,15 +103,7 @@ export const ArFirstAid = () => {
       <div ref={containerRef} className="absolute inset-0">
         <PoseDetectionCamera
           videoRef={videoRef}
-          onPoseDetected={(poseData) => {
-            updateTracker(poseData);
-            if (poseData.leftShoulder && poseData.rightShoulder) {
-              setSternumPoint({
-                x: (poseData.leftShoulder.x + poseData.rightShoulder.x) / 2,
-                y: (poseData.leftShoulder.y + poseData.rightShoulder.y) / 2 + 0.15 // Drop anatomically to sternum
-              });
-            }
-          }}
+          onPoseDetected={updateTracker}
           onError={handleCameraError}
           className="absolute inset-0"
         />
@@ -118,8 +116,8 @@ export const ArFirstAid = () => {
         <InstructionOverlay
           step={currentStep + 1}
           totalSteps={totalSteps}
-          instruction={step.instruction}
-          scenarioTitle={scenario.title}
+          instruction={t(step.instruction, language)}
+          scenarioTitle={t(scenario.title, language)}
           className="!bottom-28"
         />
       </div>
