@@ -188,8 +188,9 @@ export const EmergencyScan = () => {
   const [isScanning, setIsScanning] = useState(true);
   const [scanProgress, setScanProgress] = useState(0);
 
-  
-  
+
+
+
   const handleCameraError = useCallback((msg: string) => setCameraError(msg), []);
 
   const stopCamera = useCallback(() => {
@@ -573,7 +574,7 @@ export const EmergencyScan = () => {
                   ))}
                 </ul>
               </div>
-            )}
+            ))
 
             {/* Emergency Escalation Pill */}
             <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 rounded-xl p-3 flex items-start gap-2 transition-colors">
@@ -617,7 +618,7 @@ export const EmergencyScan = () => {
             </button>
           )}
 
-          
+
           <button
             onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
             className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-white/20 text-xs font-bold text-white tracking-wider backdrop-blur-md active:scale-95 transition-all"
