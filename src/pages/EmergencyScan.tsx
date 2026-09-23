@@ -327,7 +327,7 @@ export const EmergencyScan = () => {
         const shoulderWidth = Math.hypot(leftPx.x - rightPx.x, leftPx.y - rightPx.y);
 
         // Sternum sits a fixed fraction of shoulder width below the shoulder line.
-        const sternumY = midY + shoulderWidth * 0.28;
+        const sternumY = midY + shoulderWidth * 0.65;
 
         setSternumPoint({ x: midX, y: sternumY });
       });

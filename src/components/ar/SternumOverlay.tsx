@@ -22,7 +22,7 @@ export const SternumOverlay: React.FC<SternumOverlayProps> = ({ targetX, targetY
   }, []);
 
   const posX = targetX ? `${targetX}px` : '50%';
-  const posY = targetY ? `${targetY}px` : '36%';
+  const posY = targetY ? `${targetY}px` : '55%';
 
   return (
     <img
