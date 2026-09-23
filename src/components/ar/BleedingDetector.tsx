@@ -5,14 +5,28 @@ interface BleedingDetectorProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   /** Called when blood/wound is detected; coords are normalized 0..1. */
   onWoundStatus: (coords: { x: number; y: number } | null) => void;
+  /** Optional spatial mask to limit detection to torso region (normalized 0..1) */
+  scanMask?: { minX: number; maxX: number; minY: number; maxY: number };
 }
 
 /**
- * Perform real-time edge-computed wound detection locally.
+ * Perform real-time edge-computed wound detection locally using HSV grid flood-fill.
  */
-export const BleedingDetector = ({ videoRef, onWoundStatus }: BleedingDetectorProps) => {
+export const BleedingDetector = ({
+  videoRef,
+  onWoundStatus,
+  scanMask,
+}: BleedingDetectorProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const consecutiveEmptyFramesRef = useRef(0);
+  const cellCountRef = useRef<Int32Array>(new Int32Array(0));
+  const cellSumXRef = useRef<Float64Array>(new Float64Array(0));
+  const cellSumYRef = useRef<Float64Array>(new Float64Array(0));
+  const visitedRef = useRef<Uint8Array>(new Uint8Array(0));
+
+  const foundStreakRef = useRef(0);
+  const emptyStreakRef = useRef(0);
+  const isReportingRef = useRef(false);
+  const smoothedRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     // 320x240 for performance
@@ -20,7 +34,50 @@ export const BleedingDetector = ({ videoRef, onWoundStatus }: BleedingDetectorPr
     canvas.width = 320;
     canvas.height = 240;
     canvasRef.current = canvas;
+
+    // Initialize grid buffers
+    const CANVAS_W = 320;
+    const CANVAS_H = 240;
+    const CELL = 16; // px per cell
+    const COLS = Math.floor(CANVAS_W / CELL); // 20
+    const ROWS = Math.floor(CANVAS_H / CELL); // 15
+
+    cellCountRef.current = new Int32Array(COLS * ROWS);
+    cellSumXRef.current = new Float64Array(COLS * ROWS);
+    cellSumYRef.current = new Float64Array(COLS * ROWS);
+    visitedRef.current = new Uint8Array(COLS * ROWS);
   }, []);
+
+  /**
+   * Fast RGB -> HSV. Returns h in [0,1), s in [0,1], v in [0,1].
+   */
+  function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
+    const rn = r / 255, gn = g / 255, bn = b / 255;
+    const max = Math.max(rn, gn, bn);
+    const min = Math.min(rn, gn, bn);
+    const d = max - min;
+    let h = 0;
+    if (d !== 0) {
+      if (max === rn) h = ((gn - bn) / d) % 6;
+      else if (max === gn) h = (bn - rn) / d + 2;
+      else h = (rn - gn) / d + 4;
+      h /= 6;
+      if (h < 0) h += 1;
+    }
+    const s = max === 0 ? 0 : d / max;
+    const v = max;
+    return [h, s, v];
+  }
+
+  /**
+   * Blood-specific test in HSV space. Tuned to reject the two most common
+   * false positives: skin tones (lower saturation, higher value at a given
+   * hue) and saturated red fabric/plastic (often near-max value / too uniform).
+   */
+  function isBloodPixel(h: number, s: number, v: number): boolean {
+    const nearRedHue = h < 0.045 || h > 0.965; // ~ -16° to +16° around true red
+    return nearRedHue && s > 0.42 && v > 0.12 && v < 0.8;
+  }
 
   const processFrame = useCallback(() => {
     const video = videoRef.current;
@@ -30,59 +87,171 @@ export const BleedingDetector = ({ videoRef, onWoundStatus }: BleedingDetectorPr
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    // Draw current video frame to canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const { data } = imageData; // Uint8ClampedArray
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    let sumX = 0;
-    let sumY = 0;
-    let count = 0;
+    // Grid parameters
+    const CANVAS_W = canvas.width;
+    const CANVAS_H = canvas.height;
+    const CELL = 16; // px per cell
+    const COLS = Math.floor(CANVAS_W / CELL); // 20
+    const ROWS = Math.floor(CANVAS_H / CELL); // 15
 
-    for (let y = 0; y < canvas.height; y++) {
-      for (let x = 0; x < canvas.width; x++) {
-        const i = (y * canvas.width + x) * 4;
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
+    // Reset buffers
+    const cellCount = cellCountRef.current;
+    const cellSumX = cellSumXRef.current;
+    const cellSumY = cellSumYRef.current;
+    const visited = visitedRef.current;
+    cellCount.fill(0);
+    cellSumX.fill(0);
+    cellSumY.fill(0);
+    visited.fill(0);
 
-        // High-sensitivity red detector: accepts any saturated red substance
-        const isRedPixel =
-          r > 100 &&
-          r > g * 1.35 &&
-          r > b * 1.35 &&
-          (r - Math.max(g, b) > 35);
+    // Sample stride for performance
+    const STRIDE = 2;
 
-        if (isRedPixel) {
-          sumX += x;
-          sumY += y;
-          count++;
+    // Process pixels with spatial masking
+    for (let y = 0; y < CANVAS_H; y += STRIDE) {
+      const normY = y / CANVAS_H;
+      // Apply spatial mask Y bounds
+      if (
+        scanMask &&
+        (normY < scanMask.minY || normY > scanMask.maxY)
+      ) {
+        continue;
+      }
+
+      for (let x = 0; x < CANVAS_W; x += STRIDE) {
+        const normX = x / CANVAS_W;
+        // Apply spatial mask X bounds
+        if (
+          scanMask &&
+          (normX < scanMask.minX || normX > scanMask.maxX)
+        ) {
+          continue;
         }
+
+        const i = (y * CANVAS_W + x) * 4;
+        const [h, s, v] = rgbToHsv(data[i], data[i + 1], data[i + 2]);
+        if (!isBloodPixel(h, s, v)) continue;
+
+        const cellCol = Math.min(COLS - 1, Math.floor(x / CELL));
+        const cellRow = Math.min(ROWS - 1, Math.floor(y / CELL));
+        const idx = cellRow * COLS + cellCol;
+
+        cellCount[idx] += 1;
+        cellSumX[idx] += x;
+        cellSumY[idx] += y;
       }
     }
 
-    const totalPixels = canvas.width * canvas.height;
-    const thresholdPixels = totalPixels * 0.015; // >1.5% of frame
+    // Parameters for detection
+    const cellHotThreshold = Math.round(
+      (CELL * CELL) / (STRIDE * STRIDE) * 0.22
+    ); // ~57 of 256 px in a 16x16 cell
+    const MIN_CLUSTER_PIXELS = Math.round(
+      CANVAS_W * CANVAS_H * 0.006
+    ); // ~0.6% of frame
+    const CONFIRM_FRAMES = 2;
+    const CLEAR_FRAMES = 3;
+    const SMOOTHING_ALPHA = 0.35;
 
-    // Only report if clustering density is significant (>1.5% of pixels)
-    if (count > thresholdPixels) {
-      consecutiveEmptyFramesRef.current = 0;
-      onWoundStatus({
-        // Convert centroid to actual normalized video element coordinates (0..1)
-        x: (sumX / count) / canvas.width,
-        y: (sumY / count) / canvas.height,
-      });
+    // Flood-fill over "hot" cells to find the single largest coherent blob
+    let bestCount = 0;
+    let bestSumX = 0;
+    let bestSumY = 0;
+
+    for (let start = 0; start < COLS * ROWS; start++) {
+      if (visited[start] || cellCount[start] < cellHotThreshold) continue;
+
+      let clusterCount = 0;
+      let clusterSumX = 0;
+      let clusterSumY = 0;
+      const stack = [start];
+      visited[start] = 1;
+
+      while (stack.length) {
+        const idx = stack.pop() as number;
+        clusterCount += cellCount[idx];
+        clusterSumX += cellSumX[idx];
+        clusterSumY += cellSumY[idx];
+
+        const col = idx % COLS;
+        const row = (idx - col) / COLS;
+        const neighbors = [
+          col > 0 ? idx - 1 : -1,
+          col < COLS - 1 ? idx + 1 : -1,
+          row > 0 ? idx - COLS : -1,
+          row < ROWS - 1 ? idx + COLS : -1,
+        ];
+
+        for (const n of neighbors) {
+          if (
+            n >= 0 &&
+            !visited[n] &&
+            cellCount[n] >= cellHotThreshold
+          ) {
+            visited[n] = 1;
+            stack.push(n);
+          }
+        }
+      }
+
+      if (clusterCount > bestCount) {
+        bestCount = clusterCount;
+        bestSumX = clusterSumX;
+        bestSumY = clusterSumY;
+      }
+    }
+
+    const foundThisFrame = bestCount >= MIN_CLUSTER_PIXELS;
+
+    if (foundThisFrame) {
+      emptyStreakRef.current = 0;
+      foundStreakRef.current += 1;
+
+      const rawX = bestSumX / bestCount / CANVAS_W;
+      const rawY = bestSumY / bestCount / CANVAS_H;
+
+      // Exponential moving average for smoothing
+      smoothedRef.current = smoothedRef.current
+        ? {
+            x:
+              smoothedRef.current.x +
+              SMOOTHING_ALPHA * (rawX - smoothedRef.current.x),
+            y:
+              smoothedRef.current.y +
+              SMOOTHING_ALPHA * (rawY - smoothedRef.current.y),
+          }
+        : { x: rawX, y: rawY };
+
+      // Debounce: require consecutive confirming frames before reporting
+      if (!isReportingRef.current && foundStreakRef.current >= CONFIRM_FRAMES) {
+        isReportingRef.current = true;
+      }
+      if (isReportingRef.current) {
+        onWoundStatus(smoothedRef.current);
+      }
     } else {
-      consecutiveEmptyFramesRef.current += 1;
-      // If no blood is detected for 3 consecutive frames, emit null
-      if (consecutiveEmptyFramesRef.current >= 3) {
+      foundStreakRef.current = 0;
+      emptyStreakRef.current += 1;
+      if (isReportingRef.current && emptyStreakRef.current >= CLEAR_FRAMES) {
+        isReportingRef.current = false;
+        smoothedRef.current = null;
         onWoundStatus(null);
       }
     }
-  }, [videoRef, onWoundStatus]);
+  }, [
+    videoRef,
+    onWoundStatus,
+    scanMask?.maxX,
+    scanMask?.maxY,
+    scanMask?.minX,
+    scanMask?.minY,
+  ]);
 
   useEffect(() => {
-    const interval = setInterval(processFrame, 200); // 5 FPS (200ms)
+    const interval = setInterval(processFrame, 200); // 5 FPS
     return () => clearInterval(interval);
   }, [processFrame]);
 

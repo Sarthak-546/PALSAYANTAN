@@ -182,6 +182,7 @@ export const EmergencyScan = () => {
   const [chokingPhase, setChokingPhase] = useState<ChokingPhase>('back-blows');
   const [sternumPoint, setSternumPoint] = useState<{ x: number; y: number } | null>(null);
   const [woundPoint, setWoundPoint] = useState<{ x: number; y: number } | null>(null);
+  const [bodyMask, setBodyMask] = useState<{ minX: number; maxX: number; minY: number; maxY: number } | undefined>(undefined);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [poseError, setPoseError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(true);
@@ -233,6 +234,10 @@ export const EmergencyScan = () => {
     if (activeEmergency !== 'cpr') {
       setSternumPoint(null);
       setPoseError(null);
+      // Clear body mask when not in CPR mode (optional, but clean)
+      if (activeEmergency === 'bleeding') {
+        setBodyMask(undefined);
+      }
       return;
     }
 
@@ -265,8 +270,47 @@ export const EmergencyScan = () => {
         if (!isSubscribed) return;
         const video = videoRef.current;
         const landmarks = results?.poseLandmarks;
-        const left = landmarks?.[11];
-        const right = landmarks?.[12];
+
+        // Handle bleeding detection torso masking
+        if (activeEmergency === 'bleeding' && landmarks) {
+          // Define key torso and limb landmarks for bounding box
+          // Shoulders: 11 & 12, Elbows: 13 & 14, Wrists: 15 & 16, Hips: 23 & 24
+          const keyIndices = [11, 12, 13, 14, 15, 16, 23, 24];
+          const validPoints = keyIndices
+            .map(idx => landmarks[idx])
+            .filter(point => point && point.visibility > 0.5); // Only use confident landmarks
+
+          if (validPoints.length > 0) {
+            const xs = validPoints.map(p => p.x);
+            const ys = validPoints.map(p => p.y);
+
+            const rawMinX = Math.min(...xs);
+            const rawMaxX = Math.max(...xs);
+            const rawMinY = Math.min(...ys);
+            const rawMaxY = Math.max(...ys);
+
+            // Expand bounding box by 15% to account for body mass/flesh
+            const width = rawMaxX - rawMinX;
+            const height = rawMaxY - rawMinY;
+            const expandX = width * 0.15;
+            const expandY = height * 0.15;
+
+            const maskedMinX = Math.max(0, rawMinX - expandX);
+            const maskedMaxX = Math.min(1, rawMaxX + expandX);
+            const maskedMinY = Math.max(0, rawMinY - expandY);
+            const maskedMaxY = Math.min(1, rawMaxY + expandY);
+
+            setBodyMask({
+              minX: maskedMinX,
+              maxX: maskedMaxX,
+              minY: maskedMinY,
+              maxY: maskedMaxY,
+            });
+          } else {
+            // No confident landmarks detected, scan whole frame
+            setBodyMask(undefined);
+          }
+        }
 
         if (!video || !left || !right) {
           setSternumPoint(null);
@@ -402,6 +446,7 @@ export const EmergencyScan = () => {
               setWoundPoint(null);
             }
           }}
+          scanMask={bodyMask}
         />
       )}
 
