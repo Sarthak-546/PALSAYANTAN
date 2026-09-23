@@ -100,9 +100,16 @@ export const ArFirstAid = () => {
           onPoseDetected={(poseData) => {
             updateTracker(poseData);
             if (poseData.leftShoulder && poseData.rightShoulder) {
+              const left = poseData.leftShoulder;
+              const right = poseData.rightShoulder;
+
+              const midX = (left.x + right.x) / 2;
+              const midY = (left.y + right.y) / 2;
+              const shoulderWidth = Math.hypot(left.x - right.x, left.y - right.y);
+
               setSternumPoint({
-                x: (poseData.leftShoulder.x + poseData.rightShoulder.x) / 2,
-                y: (poseData.leftShoulder.y + poseData.rightShoulder.y) / 2 + 0.15 // Drop anatomically to sternum
+                x: midX,
+                y: midY + (shoulderWidth * 0.85) // Drop anatomically to lower sternum
               });
             }
           }}
