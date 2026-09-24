@@ -21,6 +21,9 @@ export const BleedingDetector = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const consecutiveEmptyFramesRef = useRef(0);
 
+  // Ref to track last reported wound position for debouncing
+  const lastWoundPositionRef = useRef<{ x: number; y: number } | null>(null);
+
   useEffect(() => {
     // 320x240 for performance
     const canvas = document.createElement('canvas');
@@ -92,16 +95,39 @@ export const BleedingDetector = ({
     // Only report if clustering density is significant (>1.5% of pixels)
     if (count > thresholdPixels) {
       consecutiveEmptyFramesRef.current = 0;
-      onWoundStatus({
-        // Convert centroid to actual normalized video element coordinates (0..1)
-        x: (sumX / count) / canvas.width,
-        y: (sumY / count) / canvas.height,
-      });
+
+      // Calculate centroid
+      const centroidX = (sumX / count) / canvas.width;
+      const centroidY = (sumY / count) / canvas.height;
+
+      // Performance optimization: debounce state updates - only report if moved > 3px
+      const newPosition = { x: centroidX, y: centroidY };
+      const lastPosition = lastWoundPositionRef.current;
+
+      const shouldUpdate = !lastPosition ||
+        Math.abs(newPosition.x - lastPosition.x) * canvas.width > 3 ||
+        Math.abs(newPosition.y - lastPosition.y) * canvas.height > 3;
+
+      if (shouldUpdate) {
+        lastWoundPositionRef.current = newPosition;
+        onWoundStatus(newPosition);
+      }
     } else {
       consecutiveEmptyFramesRef.current += 1;
       // If no blood is detected for 3 consecutive frames, emit null
       if (consecutiveEmptyFramesRef.current >= 3) {
-        onWoundStatus(null);
+        // Also debounce null updates
+        const nullPosition = { x: 0, y: 0 }; // dummy values, we only care that it's null
+        const lastPosition = lastWoundPositionRef.current;
+
+        const shouldUpdateNull = !lastPosition || lastPosition === null ||
+          // Only update if we weren't already reporting null (to prevent excessive null updates)
+          (lastPosition && (lastPosition.x !== 0 || lastPosition.y !== 0));
+
+        if (shouldUpdateNull) {
+          lastWoundPositionRef.current = { x: 0, y: 0 }; // mark as null state
+          onWoundStatus(null);
+        }
       }
     }
   }, [videoRef, onWoundStatus, scanMask]);

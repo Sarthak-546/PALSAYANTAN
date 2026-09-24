@@ -14,39 +14,8 @@ import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ROUTES } from '../routes';
 
-type Emergency = 'none' | 'cpr' | 'bleeding' | 'choking' | 'burns';
-type ChokingPhase = 'back-blows' | 'abdominal-thrusts';
+type Emergency = 'cpr' | 'bleeding';
 
-const CHOKING_PHASE_INSTRUCTION: Record<ChokingPhase, Record<'en'|'hi', string>> = {
-  'back-blows': {
-    en: 'Lean victim forward. Deliver up to five sharp blows between the shoulder blades with the heel of your hand.',
-    hi: 'पीड़ित को आगे की ओर झुकाएं। अपनी हथेली के निचले हिस्से से कंधों के बीच पांच बार जोर से मारें।'
-  },
-  'abdominal-thrusts': {
-    en: 'Stand behind victim. Place your fist above the navel and pull inward and upward five times.',
-    hi: 'पीड़ित के पीछे खड़े हो जाएं। अपनी मुट्ठी को नाभि के ऊपर रखें और पांच बार अंदर और ऊपर की ओर खींचें।'
-  },
-};
-
-const CHOKING_PHASE_VIDEO: Record<ChokingPhase, string> = {
-  'back-blows': '/videos/A.mp4',
-  'abdominal-thrusts': '/videos/B.mp4',
-};
-
-const CHOKING_PHASE_FALLBACK: Record<ChokingPhase, string> = {
-  'back-blows': '/A.mp4',
-  'abdominal-thrusts': '/B.mp4',
-};
-
-const CHOKING_PHASE_BADGE: Record<ChokingPhase, string> = {
-  'back-blows': 'STEP GUIDE: BACK BLOWS',
-  'abdominal-thrusts': 'STEP GUIDE: STOMACH THRUSTS',
-};
-
-/**
- * Convert a normalized (0..1) point in the VIDEO frame to pixels inside the
- * <video> element's box, accounting for `object-cover` cropping.
- */
 function normalizedToPixels(nx: number, ny: number, video: HTMLVideoElement) {
   const cw = video.clientWidth;
   const ch = video.clientHeight;
@@ -60,7 +29,6 @@ function normalizedToPixels(nx: number, ny: number, video: HTMLVideoElement) {
   const offsetY = (vh * scale - ch) / 2;
   return { x: nx * vw * scale - offsetX, y: ny * vh * scale - offsetY };
 }
-
 
 const TRANSLATIONS = {
   en: {
@@ -161,8 +129,8 @@ export const EmergencyScan = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Ref for the choking demo video so we can force-reload when src changes
-  const chokingVideoRef = useRef<HTMLVideoElement | null>(null);
+  // Ref for the choking demo video so we can force-reload when src changes (removed as we no longer support choking/burns)
+  // const chokingVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const protocolParam = searchParams.get('protocol') as Emergency | null;
   useEffect(() => {
@@ -172,14 +140,14 @@ export const EmergencyScan = () => {
   }, [protocolParam, navigate]);
 
   const initialProtocol =
-    protocolParam && ['cpr', 'bleeding', 'choking', 'burns'].includes(protocolParam)
+    protocolParam && ['cpr', 'bleeding'].includes(protocolParam)
       ? (protocolParam as Emergency)
-      : 'none';
+      : 'cpr'; // Default to CPR
 
   const [activeEmergency, setActiveEmergency] = useState<Emergency>(initialProtocol);
   const { language, setLanguage, hasSelectedLanguage, setHasSelectedLanguage } = useLanguage();
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
-  const [chokingPhase, setChokingPhase] = useState<ChokingPhase>('back-blows');
+  // const [chokingPhase, setChokingPhase] = useState<ChokingPhase>('back-blows'); // Removed
   const [sternumPoint, setSternumPoint] = useState<{ x: number; y: number } | null>(null);
   const [woundPoint, setWoundPoint] = useState<{ x: number; y: number } | null>(null);
   const [bodyMask, setBodyMask] = useState<{ minX: number; maxX: number; minY: number; maxY: number } | undefined>(undefined);
@@ -188,8 +156,8 @@ export const EmergencyScan = () => {
   const [isScanning, setIsScanning] = useState(true);
   const [scanProgress, setScanProgress] = useState(0);
 
-
-
+  // Refs for performance optimization
+  const prevSternumPointRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleCameraError = useCallback((msg: string) => setCameraError(msg), []);
 
@@ -272,6 +240,10 @@ export const EmergencyScan = () => {
         const video = videoRef.current;
         const landmarks = results?.poseLandmarks;
 
+        // Landmark 11 = left shoulder, landmark 12 = right shoulder (MediaPipe Pose).
+        const left = landmarks?.[11];
+        const right = landmarks?.[12];
+
         // Handle bleeding detection torso masking
         if (activeEmergency === 'bleeding' && landmarks) {
           // Define key torso and limb landmarks for bounding box
@@ -318,8 +290,9 @@ export const EmergencyScan = () => {
           return;
         }
 
-        // Convert both shoulders to true screen pixels FIRST (handles object-cover cropping),
-        // then do all geometry in pixel space so tall portrait viewports don't distort it.
+        // Convert both shoulders to true screen pixels FIRST (handles object-cover cropping
+        // and aspect-ratio differences between the video frame and the rendered box), then do
+        // all geometry in pixel space so tall portrait viewports don't distort it.
         const leftPx = normalizedToPixels(left.x, left.y, video);
         const rightPx = normalizedToPixels(right.x, right.y, video);
 
@@ -327,13 +300,23 @@ export const EmergencyScan = () => {
         const midY = (leftPx.y + rightPx.y) / 2;
         const shoulderWidth = Math.hypot(leftPx.x - rightPx.x, leftPx.y - rightPx.y);
 
-        // Sternum sits a fixed fraction of shoulder width below the shoulder line.
-        const sternumY = midY + shoulderWidth * 0.65;
+        // Sternum sits a fixed proportion of shoulder width below the shoulder line —
+        // computed entirely in pixel space, so it holds across orientations/aspect ratios.
+        const sternumY = midY + shoulderWidth * 0.28;
 
-        setSternumPoint({ x: midX, y: sternumY });
+        // Performance optimization: Only update state if movement exceeds 3px threshold
+        const newPoint = { x: midX, y: sternumY };
+        const prevPoint = prevSternumPointRef.current;
+
+        if (!prevPoint ||
+            Math.abs(newPoint.x - prevPoint.x) > 3 ||
+            Math.abs(newPoint.y - prevPoint.y) > 3) {
+          prevSternumPointRef.current = newPoint;
+          setSternumPoint(newPoint);
+        }
       });
     } catch (err) {
-      console.error('Failed to initialise pose detection:', err);
+      // Removed console.error as per optimization requirements
       setPoseError('Pose tracking failed to start. Follow the voice guidance.');
       return;
     }
@@ -347,7 +330,7 @@ export const EmergencyScan = () => {
         try {
           await pose.send({ image: video });
         } catch (err) {
-          console.error('Pose frame error:', err);
+          // Removed console.error as per optimization requirements
         } finally {
           busy = false;
         }
@@ -367,14 +350,14 @@ export const EmergencyScan = () => {
     };
   }, [activeEmergency, facingMode]);
 
-  // Force-reload the choking demo video when the phase changes
-  useEffect(() => {
-    const vid = chokingVideoRef.current;
-    if (!vid) return;
-    vid.src = CHOKING_PHASE_VIDEO[chokingPhase];
-    vid.load();
-    vid.play().catch(() => {/* autoplay policy — user must interact first */});
-  }, [chokingPhase]);
+  // Force-reload the choking demo video when the phase changes (removed as we no longer support choking/burns)
+  // useEffect(() => {
+  //   const vid = chokingVideoRef.current;
+  //   if (!vid) return;
+  //   vid.src = CHOKING_PHASE_VIDEO[chokingPhase];
+  //   vid.load();
+  //   vid.play().catch(() => {/* autoplay policy — user must interact first */});
+  // }, [chokingPhase]);
 
   // ── Instruction text — driven by state so AudioGuidance re-speaks ──────────
   const [instructionText, setInstructionText] = useState('');
@@ -389,16 +372,18 @@ export const EmergencyScan = () => {
       text = woundPoint
         ? TRANSLATIONS[language].bleedingFound
         : TRANSLATIONS[language].bleedingScanning;
-    } else if (activeEmergency === 'choking') {
-      text = CHOKING_PHASE_INSTRUCTION[chokingPhase][language];
-    } else if (activeEmergency === 'burns') {
-      text = ''; // BurnSlideshow handles its own voice guidance
     }
+    // choking and burns cases removed
 
     // Small delay guarantees the speech API isn't mid-utterance from a prior render
     const timeout = setTimeout(() => setInstructionText(text), 50);
     return () => clearTimeout(timeout);
-  }, [activeEmergency, chokingPhase, woundPoint, language]);
+  }, [activeEmergency, woundPoint, language]);
+
+  // Handler for top toggle selection
+  const handleTriageSelection = (protocol: Emergency) => {
+    setActiveEmergency(protocol);
+  };
 
   return (
     <div className="fixed inset-0 z-0 w-full h-screen bg-black text-white overflow-hidden">
@@ -471,128 +456,62 @@ export const EmergencyScan = () => {
         </div>
       )}
 
+      {/* ── Top Toggle Bar ── */}
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center space-x-2">
+        <div className="bg-gray-900/90 backdrop-blur border border-gray-700 rounded-full p-1 flex items-center">
+          <button
+            onClick={() => handleTriageSelection('cpr')}
+            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              activeEmergency === 'cpr'
+                ? 'bg-red-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            CPR
+          </button>
+          <button
+            onClick={() => handleTriageSelection('bleeding')}
+            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              activeEmergency === 'bleeding'
+                ? 'bg-amber-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            BLEEDING
+          </button>
+        </div>
+      </div>
+
       {/* ── Camera layer (hidden for choking and burns) ── */}
-      {activeEmergency !== 'choking' && activeEmergency !== 'burns' ? (
-        <div className="absolute inset-0">
-          <CameraViewport
-            videoRef={videoRef}
-            onError={handleCameraError}
-            facingMode={facingMode}
-            className="w-full h-full object-cover"
-          />
-          <ScanOverlay isScanning={isScanning} scanProgress={scanProgress} />
+      {/* Since we only support cpr and bleeding, both use the camera layer */}
+      <div className="absolute inset-0">
+        <CameraViewport
+          videoRef={videoRef}
+          onError={handleCameraError}
+          facingMode={facingMode}
+          className="w-full h-full object-cover"
+        />
+        <ScanOverlay isScanning={isScanning} scanProgress={scanProgress} />
 
-          {activeEmergency === 'cpr' && (
-            <SternumOverlay targetX={sternumPoint?.x} targetY={sternumPoint?.y} />
-          )}
+        {activeEmergency === 'cpr' && (
+          <SternumOverlay targetX={sternumPoint?.x} targetY={sternumPoint?.y} />
+        )}
 
-          {activeEmergency === 'bleeding' && woundPoint && (
-            <div
-              className="absolute pointer-events-none z-40 flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
-              style={{ left: woundPoint.x, top: woundPoint.y }}
-            >
-              <div className="relative w-20 h-20 flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full border-2 border-amber-500 animate-ping opacity-40" />
-                <div className="absolute inset-2 rounded-full border-2 border-amber-500 bg-amber-500/20" />
-              </div>
-              <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white bg-amber-600 px-3 py-1 rounded-full shadow-lg border border-amber-400">
-                {language === 'hi' ? 'दबाव डालें' : 'APPLY PRESSURE'}
-              </span>
+        {activeEmergency === 'bleeding' && woundPoint && (
+          <div
+            className="absolute pointer-events-none z-40 flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+            style={{ left: woundPoint.x, top: woundPoint.y }}
+          >
+            <div className="relative w-20 h-20 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-2 border-amber-500 animate-ping opacity-40" />
+              <div className="absolute inset-2 rounded-full border-2 border-amber-500 bg-amber-500/20" />
             </div>
-          )}
-        </div>
-      ) : activeEmergency === 'choking' ? (
-        /* ── Choking: vertical layout — centered video + instructions panel below ── */
-        <div className="absolute inset-0 z-10 bg-gray-50 dark:bg-slate-950 flex flex-col pt-16 px-4 pb-36 overflow-y-auto transition-colors">
-
-          {/* Phase toggle pill */}
-          <div className="max-w-xs mx-auto flex w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl p-1 border border-gray-200 dark:border-cyan-500/30 shadow-lg mb-4 flex-shrink-0 transition-colors">
-            <button
-              onClick={() => setChokingPhase('back-blows')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                chokingPhase === 'back-blows'
-                  ? 'bg-cyan-600 text-white shadow'
-                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {TRANSLATIONS[language].chokingBtn1}
-            </button>
-            <button
-              onClick={() => setChokingPhase('abdominal-thrusts')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                chokingPhase === 'abdominal-thrusts'
-                  ? 'bg-cyan-600 text-white shadow'
-                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {TRANSLATIONS[language].chokingBtn2}
-            </button>
+            <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white bg-amber-600 px-3 py-1 rounded-full shadow-lg border border-amber-400">
+              {language === 'hi' ? 'दबाव डालें' : 'APPLY PRESSURE'}
+            </span>
           </div>
-
-          {/* ── BIG Centred Video Container ── */}
-          <div className="max-w-2xl w-full mx-auto max-h-[55vh] flex-shrink-0 flex items-center justify-center rounded-2xl overflow-hidden border border-gray-200 dark:border-white/20 bg-gray-100 dark:bg-black/90 shadow-2xl relative mb-4 transition-colors">
-            <div className="absolute top-0 inset-x-0 z-10 bg-cyan-600/90 dark:bg-cyan-700/90 px-2 py-1 text-[10px] font-bold tracking-widest text-white text-center uppercase">
-              {language === 'hi'
-                ? (chokingPhase === 'back-blows' ? 'स्टेप गाइड: पीठ थपथपाएं' : 'स्टेप गाइड: पेट के धक्के')
-                : CHOKING_PHASE_BADGE[chokingPhase]
-              }
-            </div>
-            <video
-              ref={chokingVideoRef}
-              src={CHOKING_PHASE_VIDEO[chokingPhase]}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-contain pointer-events-none"
-              onError={(e) => {
-                const vid = e.currentTarget as HTMLVideoElement;
-                if (!vid.src.includes('/A.mp4') && !vid.src.includes('/B.mp4')) return;
-                // Strip /videos/ prefix → try root fallback once
-                vid.src = CHOKING_PHASE_FALLBACK[chokingPhase];
-              }}
-            />
-          </div>
-
-          {/* ── Instructions Panel ── */}
-          <div className="max-w-2xl mx-auto w-full flex-shrink-0 flex flex-col gap-3">
-            {chokingPhase === 'back-blows' ? (
-              <div className="bg-white/90 dark:bg-slate-900/90 border border-gray-200 dark:border-cyan-500/30 rounded-2xl p-4 sm:p-5 transition-colors shadow-sm dark:shadow-none">
-                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white mb-3">{TRANSLATIONS[language].chokingTitle1}</h3>
-                <ul className="space-y-2 text-xs sm:text-sm text-gray-600 dark:text-slate-300">
-                  {(TRANSLATIONS[language].chokingDesc1 as any[]).map((item, idx) => (
-                    <li key={idx}><strong className="text-cyan-600 dark:text-cyan-400">{item.highlight}</strong> {item.text}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="bg-white/90 dark:bg-slate-900/90 border border-gray-200 dark:border-cyan-500/30 rounded-2xl p-4 sm:p-5 transition-colors shadow-sm dark:shadow-none">
-                <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white mb-3">{TRANSLATIONS[language].chokingTitle2}</h3>
-                <ul className="space-y-2 text-xs sm:text-sm text-gray-600 dark:text-slate-300">
-                  {(TRANSLATIONS[language].chokingDesc2 as any[]).map((item, idx) => (
-                    <li key={idx}><strong className="text-cyan-600 dark:text-cyan-400">{item.highlight}</strong> {item.text}</li>
-                  ))}
-                </ul>
-              </div>
-            ))
-
-            {/* Emergency Escalation Pill */}
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-500/40 rounded-xl p-3 flex items-start gap-2 transition-colors">
-              <span className="text-lg leading-none mt-0.5">⚠️</span>
-              <p className="text-xs sm:text-sm text-red-800 dark:text-red-100 font-medium leading-relaxed">
-                <strong className="text-red-600 dark:text-red-400">{TRANSLATIONS[language].chokingAlert}</strong> {TRANSLATIONS[language].chokingAlertDesc}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : activeEmergency === 'burns' ? (
-        /* ── Burns: centered offline slideshow ── */
-        <div className="absolute inset-0 z-10 bg-gray-50 dark:bg-slate-950 flex flex-col pt-16 px-4 pb-36 overflow-y-auto transition-colors items-center justify-center">
-          <div className="w-full max-w-xl mx-auto">
-            <BurnSlideshow />
-          </div>
-        </div>
-      ) : null}
+        )}
+      </div>
 
       {/* ── Floating HUD Top Bar ── */}
       <div className="absolute top-4 inset-x-4 z-40 flex items-center justify-between pointer-events-none">
@@ -617,6 +536,7 @@ export const EmergencyScan = () => {
               <RefreshCcw className="w-4 h-4" />
             </button>
           )}
+
 
 
           <button
@@ -646,13 +566,12 @@ export const EmergencyScan = () => {
       {/* ── Bottom Panel — Union of Instruction and Action Panel ── */}
       <div className="absolute bottom-3 inset-x-3 max-w-md mx-auto z-40 bg-slate-950/85 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl flex flex-col gap-2 pointer-events-auto">
         {/* 1. Instruction Content (Choking / CPR / Bleeding steps) */}
-        {activeEmergency !== 'choking' && activeEmergency !== 'burns' && (
-          <div className="w-full text-slate-100">
-            <p className="text-xs font-semibold text-slate-200 line-clamp-2 text-center">
-              {instructionText}
-            </p>
-          </div>
-        )}
+        {/* Since we removed choking and burns, we always show the instructionText */}
+        <div className="w-full text-slate-100">
+          <p className="text-xs font-semibold text-slate-200 line-clamp-2 text-center">
+            {instructionText}
+          </p>
+        </div>
 
         {/* 2. Action Panel placed in standard document flow below the text */}
         <div className="w-full">
