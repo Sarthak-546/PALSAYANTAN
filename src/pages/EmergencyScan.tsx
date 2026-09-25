@@ -14,7 +14,7 @@ import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ROUTES } from '../routes';
 
-type Emergency = 'cpr' | 'bleeding';
+type Emergency = 'cpr' | 'bleeding' | 'choking';
 
 function normalizedToPixels(nx: number, ny: number, video: HTMLVideoElement) {
   const cw = video.clientWidth;
@@ -140,7 +140,7 @@ export const EmergencyScan = () => {
   }, [protocolParam, navigate]);
 
   const initialProtocol =
-    protocolParam && ['cpr', 'bleeding'].includes(protocolParam)
+    protocolParam && ['cpr', 'bleeding', 'choking'].includes(protocolParam)
       ? (protocolParam as Emergency)
       : 'cpr'; // Default to CPR
 
@@ -372,6 +372,11 @@ export const EmergencyScan = () => {
       text = woundPoint
         ? TRANSLATIONS[language].bleedingFound
         : TRANSLATIONS[language].bleedingScanning;
+    } else if (activeEmergency === 'choking') {
+      // For choking, we alternate between steps every few seconds? For now show both steps combined.
+      text = language === 'en'
+        ? 'Choking emergency: Give 5 back blows, then 5 abdominal thrusts. Repeat until obstruction cleared.'
+        : 'दम घुटना आपातकाल: 5 पीठ थपथप दें, फिर 5 पेट के धक्के दोहराएं जब तक अवरुद्ध न हो जाए।';
     }
     // choking and burns cases removed
 
@@ -453,6 +458,19 @@ export const EmergencyScan = () => {
           >
             BLEEDING
           </button>
+          {/* Choking toggle - only show if we want to allow switching; comment out if not needed */}
+          {/*
+          <button
+            onClick={() => handleTriageSelection('choking')}
+            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              activeEmergency === 'choking'
+                ? 'bg-cyan-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            CHOKING
+          </button>
+          */}
         </div>
       </div>
 
@@ -483,6 +501,45 @@ export const EmergencyScan = () => {
             <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white bg-amber-600 px-3 py-1 rounded-full shadow-lg border border-amber-400">
               {language === 'hi' ? 'दबाव डालें' : 'APPLY PRESSURE'}
             </span>
+          </div>
+        )}
+
+        {/* Choking overlay: show a simple guide over camera */}
+        {activeEmergency === 'choking' && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none bg-black/60 backdrop-blur-sm">
+            <div className="space-y-6 text-center">
+              <h2 className="text-xl font-bold text-white">
+                {language === 'en' ? 'CHOKING EMERGENCY' : 'दम घुटना आपातकाल'}
+              </h2>
+              <div className="space-y-4 max-w-md">
+                {/* Step 1 */}
+                <div className="bg-white/10 dark:bg-slate-900/50 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    {language === 'en' ? 'Step 1: 5 Back Blows' : 'चरण 1: 5 पीठ थपथप'}
+                  </h3>
+                  <p className="text-sm text-slate-200 dark:text-slate-300">
+                    {language === 'en'
+                      ? 'Stand to the side and slightly behind the victim. Support their chest with one hand. Lean the victim forward so the dislodged object falls out of the mouth. Deliver up to 5 sharp blows between the shoulder blades using the heel of your hand.'
+                      : 'पीड़ित के बगल में और थोड़ा पीछे खड़े हों। एक हाथ से उनकी छाती को सहारा दें। पीड़ित को आगे की ओर झुकाएं ताकि फंसी हुई वस्तु मुंह से बाहर गिरे। कंधे के ब्लेड के बीच 5 तेज, जोरदार प्रहार करें।'}
+                  </p>
+                </div>
+                {/* Step 2 */}
+                <div className="bg-white/10 dark:bg-slate-900/50 rounded-xl p-4">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    {language === 'en' ? 'Step 2: 5 Abdominal Thrusts' : 'चरण 2: 5 पेट के धक्के'}
+                  </h3>
+                  <p className="text-sm text-slate-200 dark:text-slate-300">
+                    {language === 'en'
+                      ? 'Stand behind the victim, wrap arms around their waist. Make a fist with one hand placed thumb-side above the belly button. Grasp fist with other hand and pull sharply inward and upward 5 times.'
+                      : 'पीड़ित के पीछे खड़े हों, दोनों हाथों को उनकी कमर के चारों ओर लपेटें। एक हाथ से मुट्ठी बनाएं; अंगूठे के हिस्से को नाभि के ठीक ऊपर रखें। दूसरे हाथ से मुट्ठी को पकड़ें। 5 बार तेजी से अंदर और ऊपर की ओर धक्का दें।'}
+                  </p>
+                </div>
+                {/* Repeat note */}
+                <p className="text-sm text-slate-300 dark:text-slate-400 italic">
+                  {language === 'en' ? 'Repeat cycles of 5 back blows and 5 abdominal thrusts until obstruction is cleared.' : '5 पीठ थपथप और 5 पेट के धक्के के चक्र दोहराएं जब तक अवरुद्ध न हो जाए।'}
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

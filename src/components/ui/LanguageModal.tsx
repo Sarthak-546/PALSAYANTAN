@@ -1,7 +1,7 @@
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export const LanguageModal = () => {
-  const { language, setLanguage, hasSelectedLanguage } = useLanguage();
+  const { language, setLanguage, hasSelectedLanguage, setHasSelectedLanguage } = useLanguage();
 
   // Only render if user hasn't selected a language yet
   if (hasSelectedLanguage) {
@@ -19,13 +19,19 @@ export const LanguageModal = () => {
         </p>
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => setLanguage('en')}
+            onClick={() => {
+              setLanguage('en');
+              setHasSelectedLanguage(true);
+            }}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-base"
           >
             English
           </button>
           <button
-            onClick={() => setLanguage('hi')}
+            onClick={() => {
+              setLanguage('hi');
+              setHasSelectedLanguage(true);
+            }}
             className="w-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-bold py-4 rounded-xl border border-slate-300 dark:border-slate-600 transition-all text-base"
           >
             हिंदी (Hindi)

@@ -1,34 +1,46 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+type ReactNode = import('react').ReactNode;
 
-interface LanguageContextType {
-  language: 'en' | 'hi';
-  setLanguage: (lang: 'en' | 'hi') => void;
+type Language = 'en' | 'hi';
+
+interface LanguageContextProps {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  toggleLanguage: () => void;
   hasSelectedLanguage: boolean;
-  setHasSelectedLanguage: (val: boolean) => void;
+  setHasSelectedLanguage: (value: boolean) => void;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLang] = useState<'en' | 'hi'>('en');
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  const [language, setLanguage] = useState<Language>('en');
   const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('app_lang');
-    if (saved === 'en' || saved === 'hi') {
-      setLang(saved);
+    const stored = localStorage.getItem('language') as Language | null;
+    const storedSelection = localStorage.getItem('hasSelectedLanguage');
+    if (stored === 'en' || stored === 'hi') {
+      setLanguage(stored);
+    }
+    if (storedSelection === 'true') {
       setHasSelectedLanguage(true);
     }
+    // Update html lang attribute for screen readers and SEO
+    document.documentElement.lang = language === 'hi' ? 'hi' : 'en';
   }, []);
 
-  const setLanguage = (lang: 'en' | 'hi') => {
-    setLang(lang);
-    setHasSelectedLanguage(true);
-    localStorage.setItem('app_lang', lang);
+  useEffect(() => {
+    localStorage.setItem('language', language);
+    document.documentElement.lang = language === 'hi' ? 'hi' : 'en';
+  }, [language]);
+
+  const toggleLanguage = () => {
+    setLanguage((prev) => (prev === 'en' ? 'hi' : 'en'));
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, hasSelectedLanguage, setHasSelectedLanguage }}>
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, hasSelectedLanguage, setHasSelectedLanguage }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -36,6 +48,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (!context) throw new Error('useLanguage must be used within LanguageProvider');
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
   return context;
 };

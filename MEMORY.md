@@ -1,0 +1,2 @@
+- [Home Fix](home-fix.md) — Fixed Home.tsx choking button to route to emergency scan with protocol=choking.
+- [Emergency Scan Fix](emergency-scan-fix.md) — Updated EmergencyScan.tsx to handle choking protocol from URL and show choking guidance overlay.
