@@ -198,16 +198,29 @@ export const FirstAidDetail = () => {
               <video
                 key={selectedChokingVideo}
                 src={selectedChokingVideo === 'A' ? '/videos/A.mp4' : '/videos/B.mp4'}
+                type="video/mp4"
                 autoPlay
                 loop
                 muted
+                muted
                 playsInline
+                preload="auto"
                 className="w-full h-full object-contain pointer-events-none"
                 onError={(e) => {
                   const vid = e.currentTarget as HTMLVideoElement;
+                  console.error('Video error:', e);
                   if (!vid.src.includes('/A.mp4') && !vid.src.includes('/B.mp4')) return;
                   // Try root fallback once if /videos/ path fails
                   vid.src = selectedChokingVideo === 'A' ? '/A.mp4' : '/B.mp4';
+                }}
+                onLoadedData={() => {
+                  console.log('Video loaded successfully');
+                }}
+                onWaiting={() => {
+                  console.log('Video waiting for data');
+                }}
+                onPlaying={() => {
+                  console.log('Video playing');
                 }}
               />
             </div>

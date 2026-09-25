@@ -64,7 +64,11 @@ const HOME_UI = {
 export const Home = () => {
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
-  const [initializing, setInitializing] = useState(true);
+  const [initializing, setInitializing] = useState(() => {
+    // Check if we have initialized before (persisted across sessions)
+    const hasInitialized = localStorage.getItem('hasInitialized') === 'true';
+    return !hasInitialized; // initializing true if not initialized before
+  });
   const [systemsReady, setSystemsReady] = useState({
     camera: false,
     ai: false,
@@ -73,13 +77,25 @@ export const Home = () => {
   });
 
   useEffect(() => {
-    // Staggered initialization timing (3.8s total warmup)
-    // Allows MediaPipe Pose and WASM assets to finish warming up before CPR navigation
+    const hasInitialized = localStorage.getItem('hasInitialized') === 'true';
+
+    if (hasInitialized) {
+      // Already initialized: skip long warmup, set systems ready immediately
+      setSystemsReady({ camera: true, ai: true, offline: true, gps: true });
+      setInitializing(false);
+      return;
+    }
+
+    // First-time initialization: staggered warmup
     const t1 = setTimeout(() => setSystemsReady(prev => ({ ...prev, camera: true })), 700);
     const t2 = setTimeout(() => setSystemsReady(prev => ({ ...prev, ai: true })), 1500);
     const t3 = setTimeout(() => setSystemsReady(prev => ({ ...prev, offline: true })), 2300);
     const t4 = setTimeout(() => setSystemsReady(prev => ({ ...prev, gps: true })), 3100);
-    const tEnd = setTimeout(() => setInitializing(false), 3800);
+    const tEnd = setTimeout(() => {
+      setInitializing(false);
+      // Mark as initialized for future loads
+      localStorage.setItem('hasInitialized', 'true');
+    }, 3800);
 
     return () => {
       [t1, t2, t3, t4, tEnd].forEach(clearTimeout);
