@@ -34,6 +34,15 @@ export class CPRTracker {
     leftShoulder: { x: number; y: number } | null;
     rightShoulder: { x: number; y: number } | null;
   } | null): CPRFeedback {
+    if (!poseData) {
+      return {
+        compressionsPerMinute: null,
+        compressionQuality: null,
+        elbowAngleFeedback: null,
+        voiceFeedback: null
+      };
+    }
+
     const now = Date.now();
 
     // Calculate average wrist Y position (lower Y = higher on screen)
