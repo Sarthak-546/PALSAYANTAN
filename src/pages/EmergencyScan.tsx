@@ -145,7 +145,7 @@ export const EmergencyScan = () => {
       : 'cpr'; // Default to CPR
 
   const [activeEmergency, setActiveEmergency] = useState<Emergency>(initialProtocol);
-  const { language, setLanguage, hasSelectedLanguage, setHasSelectedLanguage } = useLanguage();
+  const { language, setLanguage, hasSelectedLanguage } = useLanguage();
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   // const [chokingPhase, setChokingPhase] = useState<ChokingPhase>('back-blows'); // Removed
   const [sternumPoint, setSternumPoint] = useState<{ x: number; y: number } | null>(null);
@@ -510,10 +510,7 @@ export const EmergencyScan = () => {
               <RefreshCcw className="w-4 h-4" />
             </button>
           )}
-
-
-
-                  </div>
+        </div>
 
         <span className="pointer-events-none flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide text-white shadow-sm">
           <span className="relative flex h-2 w-2">
