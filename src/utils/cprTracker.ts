@@ -1,3 +1,5 @@
+import React, { useCallback, useRef, useState } from 'react';
+
 export type CPRFeedback = {
   compressionsPerMinute: number | null;
   compressionQuality: 'GOOD' | 'TOO_FAST' | 'TOO_SLOW' | 'INSUFFICIENT_RECOIL' | null;
@@ -31,7 +33,7 @@ export class CPRTracker {
     rightElbow: { x: number; y: number } | null;
     leftShoulder: { x: number; y: number } | null;
     rightShoulder: { x: number; y: number } | null;
-  }): CPRFeedback {
+  } | null): CPRFeedback {
     const now = Date.now();
 
     // Calculate average wrist Y position (lower Y = higher on screen)

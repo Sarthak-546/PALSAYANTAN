@@ -17,24 +17,13 @@ const CATEGORIES = [
   'Critical Medical'
 ];
 
-const translateCat = (catStr: string, lang: 'en' | 'hi') => {
-  if (lang === 'en') return catStr;
-  const hm: Record<string, string> = {
-    'Critical Life Support': 'गंभीर जीवन रक्षक',
-    'Trauma & Injury': 'चोट व घाव',
-    'Environmental & Allergic': 'पर्यावरणीय व रासायनिक',
-    'Critical Medical': 'गंभीर चिकित्सा'
-  };
-  return hm[catStr] || catStr;
-};
-
 
 export const FirstAidLibrary = () => {
   const navigate = useNavigate();
   const { voiceGuidance, setVoiceGuidance } = useEmergencySession();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState<EmergencyScenario['category'] | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const filteredScenarios = emergencyScenarios.filter((s) => {
     const matchesSearch =
@@ -113,15 +102,15 @@ export const FirstAidLibrary = () => {
           </button>
           {CATEGORIES.map((cat) => (
             <button
-              key={translateCat(cat, language)}
-              onClick={() => setActiveCategory(activeCategory === translateCat(cat, language) ? null : translateCat(cat, language))}
+              key={cat}
+              onClick={() => setActiveCategory(activeCategory === t(cat, language) ? null : t(cat, language))}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-colors ${
-                activeCategory === translateCat(cat, language)
+                activeCategory === t(cat, language)
                   ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-slate-900'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
               }`}
             >
-              {translateCat(cat, language)}
+              {t(cat, language)}
             </button>
           ))}
         </div>

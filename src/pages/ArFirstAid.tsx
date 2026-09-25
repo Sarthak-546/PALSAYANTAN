@@ -13,12 +13,15 @@ import { useElementSize, mapNormalizedToCover } from '../hooks/useElementSize';
 import { ROUTES } from '../routes';
 import { PoseDetectionCamera } from '../components/camera/PoseDetectionCamera';
 import { useCPRTracker } from '../utils/cprTracker';
+import { useLanguage } from '../contexts/LanguageContext';
+import { t } from '../data/emergencyScenarios';
 
 type Tracking = 'SEARCHING_FOR_TARGET' | 'LOCKED';
 
 export const ArFirstAid = () => {
   const navigate = useNavigate();
   const { demoMode, voiceGuidance, setVoiceGuidance } = useEmergencySession();
+  const { language } = useLanguage();
 
   // Works for /ar-first-aid?type=cpr, /ar-first-aid/cpr, and bare /ar-first-aid (defaults to CPR)
   const { scenario } = useScenario('cpr');
@@ -68,7 +71,11 @@ export const ArFirstAid = () => {
 
   return (
     <div className="relative w-full overflow-hidden bg-gray-900" style={{ height: '100dvh' }}>
-      <AudioGuidance text={step.audioText ?? step.instruction} isActive={voiceGuidance} />
+      <AudioGuidance
+        text={t(step.audioText ?? step.instruction, language)}
+        isActive={voiceGuidance}
+        lang={language}
+      />
 
       {/* CPR Feedback Display (only for CPR scenario) */}
       {scenario.id === 'cpr' && trackingState === 'LOCKED' && (
@@ -98,8 +105,13 @@ export const ArFirstAid = () => {
         <PoseDetectionCamera
           videoRef={videoRef}
           onPoseDetected={(poseData) => {
-            updateTracker(poseData);
-            if (poseData.leftShoulder && poseData.rightShoulder) {
+            // Extract only the properties needed by CPRTracker (ignore sternum)
+            if (poseData) {
+              const { sternum, ...cprPoseData } = poseData;
+              updateTracker(cprPoseData);
+            }
+
+            if (poseData && poseData.leftShoulder && poseData.rightShoulder) {
               const left = poseData.leftShoulder;
               const right = poseData.rightShoulder;
 
@@ -125,8 +137,8 @@ export const ArFirstAid = () => {
         <InstructionOverlay
           step={currentStep + 1}
           totalSteps={totalSteps}
-          instruction={step.instruction}
-          scenarioTitle={scenario.title}
+          instruction={t(step.instruction, language)}
+          scenarioTitle={t(scenario.title, language)}
           className="!bottom-28"
         />
       </div>
