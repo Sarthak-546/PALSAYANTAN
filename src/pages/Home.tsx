@@ -73,17 +73,17 @@ export const Home = () => {
   });
 
   useEffect(() => {
-    // Staged "boot" animation. Timers are cleared on unmount so leaving Home early is safe.
-    const timers = [
-      window.setTimeout(() => setSystemsReady(p => ({ ...p, camera: true })), 500),
-      window.setTimeout(() => setSystemsReady(p => ({ ...p, ai: true })), 1000),
-      window.setTimeout(() => setSystemsReady(p => ({ ...p, offline: true })), 1500),
-      window.setTimeout(() => {
-        setSystemsReady(p => ({ ...p, gps: true }));
-        setInitializing(false);
-      }, 2000),
-    ];
-    return () => timers.forEach(window.clearTimeout);
+    // Staggered initialization timing (3.8s total warmup)
+    // Allows MediaPipe Pose and WASM assets to finish warming up before CPR navigation
+    const t1 = setTimeout(() => setSystemsReady(prev => ({ ...prev, camera: true })), 700);
+    const t2 = setTimeout(() => setSystemsReady(prev => ({ ...prev, ai: true })), 1500);
+    const t3 = setTimeout(() => setSystemsReady(prev => ({ ...prev, offline: true })), 2300);
+    const t4 = setTimeout(() => setSystemsReady(prev => ({ ...prev, gps: true })), 3100);
+    const tEnd = setTimeout(() => setInitializing(false), 3800);
+
+    return () => {
+      [t1, t2, t3, t4, tEnd].forEach(clearTimeout);
+    };
   }, []);
 
   // ── Initializing Boot Screen ──
