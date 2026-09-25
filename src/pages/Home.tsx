@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { HeartPulse, Heart, Droplet, ShieldAlert, Camera, BookOpen, MapPin, Baby } from 'lucide-react';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageModal } from '../components/ui/LanguageModal';
 import { ROUTES } from '../routes';
 
 const HOME_UI = {
@@ -89,39 +90,53 @@ export const Home = () => {
   if (initializing) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-slate-900 dark:text-slate-100 transition-colors">
-        <HeartPulse className="w-16 h-16 text-red-500 animate-pulse mb-6" />
-        <h1 className="text-2xl font-extrabold tracking-tight mb-2 text-center">
-          {HOME_UI[language].title}
-        </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-10 text-center max-w-xs">
-          {HOME_UI[language].subtitle}
-        </p>
+        <header className="flex items-center justify-between mb-4 w-full">
+          <div className="flex items-center gap-2.5">
+            <HeartPulse className="w-6 h-6 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse" />
+            <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
+              {HOME_UI[language].title}
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-mono bg-slate-100 dark:bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full tracking-wider font-bold shadow-sm">
+              {HOME_UI[language].offlineEngine}
+            </span>
+            <ThemeToggle className="scale-90" />
+          </div>
+        </header>
+        <main className="flex-1 flex-col items-center justify-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-10 text-center max-w-xs">
+            {HOME_UI[language].subtitle}
+          </p>
 
-        <div className="space-y-4 w-full max-w-[200px] mb-8">
-          <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.camera ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
-            <span className="text-xs font-medium tracking-wide">{HOME_UI[language].systemCamera}</span>
+          <div className="space-y-4 w-full max-w-[200px] mb-8">
+            <div className="flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.camera ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
+              <span className="text-xs font-medium tracking-wide">{HOME_UI[language].systemCamera}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.ai ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
+              <span className="text-xs font-medium tracking-wide">{HOME_UI[language].systemAi}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.offline ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
+              <span className="text-xs font-medium tracking-wide">{HOME_UI[language].systemOffline}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.gps ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
+              <span className="text-xs font-medium tracking-wide">{HOME_UI[language].systemGps}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.ai ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
-            <span className="text-xs font-medium tracking-wide">{HOME_UI[language].systemAi}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.offline ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
-            <span className="text-xs font-medium tracking-wide">{HOME_UI[language].systemOffline}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-colors duration-500 ${systemsReady.gps ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-slate-600 shadow-transparent'}`} />
-            <span className="text-xs font-medium tracking-wide">{HOME_UI[language].systemGps}</span>
-          </div>
-        </div>
+        </main>
       </div>
     );
   }
 
   // ── Main Home Interface ──
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between items-center p-4 sm:p-6 transition-colors">
+    <>
+      <LanguageModal />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between items-center p-4 sm:p-6 transition-colors">
 
       {/* ── Main Layout Wrapper ── */}
       <div className="w-full max-w-md mx-auto flex flex-col gap-5 flex-1 justify-center relative pb-10">
@@ -139,12 +154,6 @@ export const Home = () => {
               {HOME_UI[language].offlineEngine}
             </span>
             <ThemeToggle className="scale-90" />
-            <button
-              onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-              className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-white tracking-wider active:scale-95 transition-all ml-2"
-            >
-              {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
-            </button>
           </div>
         </header>
 
@@ -256,6 +265,7 @@ export const Home = () => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
 

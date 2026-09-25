@@ -387,33 +387,7 @@ export const EmergencyScan = () => {
 
   return (
     <div className="fixed inset-0 z-0 w-full h-screen bg-black text-white overflow-hidden">
-      {/* ── Initial Language Selection Modal ── */}
-      {!hasSelectedLanguage && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-slate-900 border border-white/20 rounded-2xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4">
-            <h2 className="text-white text-lg font-bold text-center tracking-wide">
-              Select Language / भाषा चुनें
-            </h2>
-            <p className="text-slate-400 text-xs text-center mb-2">
-              Choose your preferred language for voice and text guidance.
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => setLanguage('hi')}
-                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-base"
-              >
-                हिंदी (Hindi)
-              </button>
-              <button
-                onClick={() => setLanguage('en')}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl border border-white/10 transition-all text-base"
-              >
-                English
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Initial Language Selection Modal (REMOVED - now in Home only) */}
 
       {/* Voice engine — re-speaks on every instructionText change */}
       <AudioGuidance text={instructionText} isActive={voiceGuidance} lang={language} />
@@ -539,13 +513,7 @@ export const EmergencyScan = () => {
 
 
 
-          <button
-            onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-            className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-white/20 text-xs font-bold text-white tracking-wider backdrop-blur-md active:scale-95 transition-all"
-          >
-            {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
-          </button>
-        </div>
+                  </div>
 
         <span className="pointer-events-none flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide text-white shadow-sm">
           <span className="relative flex h-2 w-2">

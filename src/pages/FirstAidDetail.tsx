@@ -127,24 +127,6 @@ export const FirstAidDetail = () => {
           <span className={`text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full ${SEVERITY_STYLES[scenario.severity] ?? ''}`}>
             {scenario.severity}
           </span>
-
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setVoiceGuidance(!voiceGuidance)}
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                voiceGuidance ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400'
-              }`}
-            >
-              {voiceGuidance ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-            </button>
-            <ThemeToggle className="scale-90" />
-            <button
-              onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-              className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-white tracking-wider active:scale-95 transition-all"
-            >
-              {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
-            </button>
-          </div>
         </div>
 
         {/* Progress bar */}
