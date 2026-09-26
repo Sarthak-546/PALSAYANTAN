@@ -31,9 +31,27 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Aggressively cache all JS, CSS, HTML, images, and WASM files for offline CV
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,mp3}'],
-        maximumFileSizeToCacheInBytes: 5000000, // 5MB limit to allow WASM models
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm,mp4}'],
+        maximumFileSizeToCacheInBytes: 15000000,
+        runtimeCaching: [
+          {
+            urlPattern: /.*\.(mp4|webm)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'offline-video-cache',
+              plugins: [
+                {
+                  cachedResponseWillBeUsed: async ({ cachedResponse, request }) => {
+                    if (cachedResponse && request.headers.has('range')) {
+                      return cachedResponse; // Allows the browser to process the range slice offline
+                    }
+                    return cachedResponse;
+                  }
+                }
+              ]
+            }
+          }
+        ]
       }
     })
   ]

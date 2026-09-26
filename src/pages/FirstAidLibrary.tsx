@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Volume2, VolumeX } from 'lucide-react';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { t } from '../data/emergencyScenarios';
 import { FirstAidCard } from '../components/first-aid/FirstAidCard';
 import { emergencyScenarios } from '../data/emergencyScenarios';
