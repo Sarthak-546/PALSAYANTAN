@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { LocationPanel } from '../components/location/LocationPanel';
 import { LocationSharing } from '../components/location/LocationSharing';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 
 export const Location = () => {
   const navigate = useNavigate();

@@ -12,6 +12,7 @@ import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { BurnSlideshow } from '../components/first-aid/BurnSlideshow';
 import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { ROUTES } from '../routes';
 
 type Emergency = 'cpr' | 'bleeding' | 'choking';

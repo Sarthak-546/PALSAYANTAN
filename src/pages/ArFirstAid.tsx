@@ -14,7 +14,7 @@ import { ROUTES } from '../routes';
 import { PoseDetectionCamera } from '../components/camera/PoseDetectionCamera';
 import { useCPRTracker } from '../utils/cprTracker';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { t } from '../data/emergencyScenarios';
 
 type Tracking = 'SEARCHING_FOR_TARGET' | 'LOCKED';

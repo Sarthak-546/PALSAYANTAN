@@ -18,6 +18,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   'Critical Life Support': '❤️‍🩹',
   'Trauma & Injury': '🩹',
   'Environmental & Allergic': '🌡️',
+  'Critical Medical': '🩺',
 };
 
 export const FirstAidCard = ({ scenario, onSelect, className = '' }: FirstAidCardProps) => {

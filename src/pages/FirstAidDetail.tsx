@@ -10,7 +10,7 @@ import { t } from '../data/emergencyScenarios';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { useScenario } from '../hooks/useScenario';
 import { ROUTES, arFirstAidPath } from '../routes';
-import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import type { EmergencyScenario } from '../data/emergencyScenarios';
 
 const SEVERITY_STYLES: Record<EmergencyScenario['severity'], string> = {
@@ -116,7 +116,7 @@ export const FirstAidDetail = () => {
       <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 shadow-sm transition-colors">
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
           <button
-            onClick={() => navigate(ROUTES.firstAid)}
+            onClick={() => navigate(ROUTES.firstAid, { replace: true })}
             className="flex items-center gap-1.5 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -358,7 +358,7 @@ export const FirstAidDetail = () => {
             </button>
           )}
           <button
-            onClick={() => navigate(ROUTES.firstAid)}
+            onClick={() => navigate(ROUTES.firstAid, { replace: true })}
             className="w-full text-sm font-medium text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 py-2 transition-colors"
           >
             {TRANSLATIONS[language].backToLibrary}
