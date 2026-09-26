@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Video } from 'lucide-react';
 import { AudioGuidance } from '../ar/AudioGuidance';
 import { useEmergencySession } from '../../contexts/EmergencySessionContext';
@@ -10,13 +10,38 @@ const PREGNANCY_RECOVERY_TEXT = "If the pregnant patient is unconscious but brea
 export const PregnancyGuide = () => {
   const [activeTab, setActiveTab] = useState<'CPR' | 'RECOVERY'>('CPR');
   const { voiceGuidance } = useEmergencySession();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Preload both videos on mount to reduce latency when switching tabs
+  useEffect(() => {
+    const preloadVideo = (src: string) => {
+      const video = document.createElement('video');
+      video.src = src;
+      video.preload = 'auto';
+      // Using decode() if available for better preloading
+      if ('decode' in video) {
+        video.decode().catch(() => {}); // Ignore errors
+      }
+    };
+    preloadVideo('/videos/pcpr.mp4');
+    preloadVideo('/videos/pcpr2.mp4');
+  }, []);
+
+  // Update video source when tab changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.src = activeTab === 'CPR' ? '/videos/pcpr.mp4' : '/videos/pcpr2.mp4';
+      videoRef.current.load(); // Reload with new source
+      videoRef.current.play().catch(() => {}); // Try to play (may be blocked by autoplay policies)
+    }
+  }, [activeTab]);
 
   return (
     <div className="w-full flex-shrink-0 flex flex-col gap-4">
       {/* Dynamic Audio Guidance */}
-      <AudioGuidance 
-        text={activeTab === 'CPR' ? PREGNANCY_CPR_TEXT : PREGNANCY_RECOVERY_TEXT} 
-        isActive={voiceGuidance} 
+      <AudioGuidance
+        text={activeTab === 'CPR' ? PREGNANCY_CPR_TEXT : PREGNANCY_RECOVERY_TEXT}
+        isActive={voiceGuidance}
       />
 
       <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1.5 gap-2 rounded-2xl border border-gray-200 dark:border-fuchsia-500/20">
@@ -53,21 +78,24 @@ export const PregnancyGuide = () => {
 
         <div className="relative w-full aspect-[16/9] bg-black flex items-center justify-center overflow-hidden">
           <video
-            key={activeTab} // Force remount to fix browser autoplay on src change
-            src={activeTab === 'CPR' ? '/videos/pcpr.mp4' : '/videos/pcpr2.mp4'}
+            ref={videoRef}
             autoPlay
             loop
             muted
             playsInline
             className="w-full h-full object-contain pointer-events-none"
             onError={(e) => {
-              if (activeTab === 'CPR' && (e.currentTarget.src.endsWith('/videos/pcpr.mp4'))) {
-                e.currentTarget.src = '/pcpr.mp4';
-                return;
-              }
-              if (activeTab === 'RECOVERY' && (e.currentTarget.src.endsWith('/videos/pcpr2.mp4'))) {
-                e.currentTarget.src = '/2pcpr.mp4';
-                return;
+              if (videoRef.current) {
+                if (activeTab === 'CPR' && (e.currentTarget.src.endsWith('/videos/pcpr.mp4'))) {
+                  e.currentTarget.src = '/pcpr.mp4';
+                  e.currentTarget.load();
+                  return;
+                }
+                if (activeTab === 'RECOVERY' && (e.currentTarget.src.endsWith('/videos/pcpr2.mp4'))) {
+                  e.currentTarget.src = '/2pcpr.mp4';
+                  e.currentTarget.load();
+                  return;
+                }
               }
               const img = document.createElement('img');
               img.src = '/images/burns/3.png'; // fallback graphic
