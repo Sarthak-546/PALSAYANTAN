@@ -83,6 +83,7 @@ export const PregnancyGuide = () => {
             loop
             muted
             playsInline
+            preload="auto"
             className="w-full h-full object-contain pointer-events-none"
             onError={(e) => {
               if (videoRef.current) {

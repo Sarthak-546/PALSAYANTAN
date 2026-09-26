@@ -109,9 +109,7 @@ export const FirstAidDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors">
       {/* Voice guidance */}
-      {scenario.id !== 'burns' && scenario.id !== 'pregnancy' && (
-        <AudioGuidance text={t(step.audioText ?? step.instruction, language)} isActive={voiceGuidance} />
-      )}
+      <AudioGuidance text={t(step.audioText ?? step.instruction, language)} isActive={voiceGuidance} />
 
       {/* Sticky header */}
       <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 shadow-sm transition-colors">
@@ -339,7 +337,13 @@ export const FirstAidDetail = () => {
         <div className="space-y-2.5">
           {scenario.hasArGuide && (
             <button
-              onClick={() => navigate(scenario.arRoute ?? arFirstAidPath(scenario.id))}
+              onClick={() => {
+                if (scenario.id === 'cpr') {
+                  navigate('/emergency-scan?protocol=cpr');
+                } else {
+                  navigate(scenario.arRoute ?? arFirstAidPath(scenario.id));
+                }
+              }}
               className="w-full flex items-center justify-center gap-2 py-3 bg-purple-600 hover:bg-purple-500 dark:bg-purple-700 dark:hover:bg-purple-600 text-white text-sm font-bold rounded-2xl shadow-lg shadow-purple-600/20 dark:shadow-purple-900/40 transition-all active:scale-[0.98]"
             >
               <Shield className="h-4 w-4" />
