@@ -6,6 +6,7 @@ import { LocationPanel } from '../components/location/LocationPanel';
 import { LocationSharing } from '../components/location/LocationSharing';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
+import { Phone } from 'lucide-react';
 
 export const Location = () => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ export const Location = () => {
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 8000,
         maximumAge: 0,
       }
     );
@@ -76,31 +77,21 @@ export const Location = () => {
 
   const handleShareLocation = () => {
     if (!currentLocation) {
-      alert('Please get your current location first');
+      // Provide fallback message when GPS is unavailable
+      const mapsUrl = `https://maps.google.com/?q=0,0`;
+      const message = `EMERGENCY: Immediate medical assistance required! Location: ${mapsUrl} (Lat: 0.000000, Long: 0.000000)`;
+      const smsUri = `sms:112?&body=${encodeURIComponent(message)}`;
+      window.location.href = smsUri;
       return;
     }
 
-    // In a real app, this would use the Web Share API
-    // For demo, we'll show a simulated sharing experience
-    const shareMessage = `EMERGENCY ASSISTANCE REQUEST\n\nSituation: Possible medical emergency\nCoordinates: ${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}\nTimestamp: ${new Date(currentLocation.timestamp).toLocaleString()}`;
+    // Format payload for cross-platform cellular SMS URI standard
+    const mapsUrl = `https://maps.google.com/?q=${currentLocation.latitude.toFixed(6)},${currentLocation.longitude.toFixed(6)}`;
+    const message = `EMERGENCY: Immediate medical assistance required! Location: ${mapsUrl} (Lat: ${currentLocation.latitude.toFixed(6)}, Long: ${currentLocation.longitude.toFixed(6)})`;
+    const smsUri = `sms:112?&body=${encodeURIComponent(message)}`;
 
-    // Try to use Web Share API if available
-    if (navigator.share) {
-      navigator.share({
-        title: 'Emergency Assistance Request',
-        text: shareMessage,
-      }).catch(() => {
-        // Fallback to clipboard
-        navigator.clipboard.writeText(shareMessage).then(() => {
-          alert('Location details copied to clipboard. You can now share this information with emergency services.');
-        });
-      });
-    } else {
-      // Fallback to clipboard
-      navigator.clipboard.writeText(shareMessage).then(() => {
-        alert('Location details copied to clipboard. You can now share this information with emergency services.');
-      });
-    }
+    // Wire the primary "Share Location" button directly to SMS URI
+    window.location.href = smsUri;
   };
 
   const handleUseDemoLocation = () => {
@@ -180,6 +171,57 @@ export const Location = () => {
 
           {currentLocation && !locationError && (
             <div className="space-y-4">
+              {/* Offline Telemetry UI */}
+              <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-slate-100 mb-2">
+                  Offline Location Fix
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-slate-400">Latitude:</span>
+                    <span className="font-mono text-gray-800 dark:text-slate-200">
+                      {currentLocation.latitude.toFixed(6)}°
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-slate-400">Longitude:</span>
+                    <span className="font-mono text-gray-800 dark:text-slate-200">
+                      {currentLocation.longitude.toFixed(6)}°
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-slate-400">Accuracy:</span>
+                    <span className="text-gray-800 dark:text-slate-200">
+                      {Math.round(currentLocation.accuracy)} meters
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Emergency Dial Buttons */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-slate-100 mb-2">
+                  Emergency Contacts
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <a
+                    href="tel:112"
+                    className="flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    <span>National Emergency (112)</span>
+                  </a>
+                  <a
+                    href="tel:108"
+                    className="flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    <span>Ambulance (108)</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Coordinate Display (existing) */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="text-gray-500">Latitude:</div>
