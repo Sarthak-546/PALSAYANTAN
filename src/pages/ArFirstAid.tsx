@@ -14,6 +14,7 @@ import { ROUTES } from '../routes';
 import { PoseDetectionCamera } from '../components/camera/PoseDetectionCamera';
 import { useCPRTracker } from '../utils/cprTracker';
 import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
 import { t } from '../data/emergencyScenarios';
 
 type Tracking = 'SEARCHING_FOR_TARGET' | 'LOCKED';
@@ -149,7 +150,10 @@ export const ArFirstAid = () => {
           <ArrowLeft className="w-5 h-5" />
           <span>Exit</span>
         </button>
-        <ProgressIndicator currentStep={currentStep + 1} totalSteps={totalSteps} />
+        <div className="flex items-center gap-3">
+          <ProgressIndicator currentStep={currentStep + 1} totalSteps={totalSteps} />
+          <LanguageSwitcher className="ml-3" />
+        </div>
       </div>
 
       {cameraError && (

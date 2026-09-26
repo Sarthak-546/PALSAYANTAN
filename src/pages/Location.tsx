@@ -4,6 +4,8 @@ import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { Button } from '../components/ui/Button';
 import { LocationPanel } from '../components/location/LocationPanel';
 import { LocationSharing } from '../components/location/LocationSharing';
+import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
 
 export const Location = () => {
   const navigate = useNavigate();
@@ -123,13 +125,16 @@ export const Location = () => {
           <h1 className="text-2xl font-bold text-gray-800">
             LOCATION SHARING
           </h1>
-          <Button
-            variant="outline"
-            onClick={handleNavigateHome}
-            className="text-sm"
-          >
-            Home
-          </Button>
+          <div className="flex items-center space-x-2">
+            <LanguageSwitcher className="ml-3" />
+            <Button
+              variant="outline"
+              onClick={handleNavigateHome}
+              className="text-sm"
+            >
+              Home
+            </Button>
+          </div>
         </div>
 
         {/* Location Status */}

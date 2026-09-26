@@ -57,12 +57,7 @@ export const Settings = () => {
           </h1>
           <div className="flex items-center space-x-2">
             <ThemeToggle />
-            <button
-                onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-                className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-white tracking-wider active:scale-95 transition-all"
-            >
-                {language === 'en' ? '🇮🇳 HI' : '🌐 EN'}
-            </button>
+            <LanguageSwitcher className="ml-3" />
             <Button
               variant="outline"
               onClick={() => navigate('/')}

@@ -10,6 +10,7 @@ import { t } from '../data/emergencyScenarios';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { useScenario } from '../hooks/useScenario';
 import { ROUTES, arFirstAidPath } from '../routes';
+import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
 import type { EmergencyScenario } from '../data/emergencyScenarios';
 
 const SEVERITY_STYLES: Record<EmergencyScenario['severity'], string> = {
@@ -125,6 +126,11 @@ export const FirstAidDetail = () => {
           <span className={`text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-full ${SEVERITY_STYLES[scenario.severity] ?? ''}`}>
             {scenario.severity}
           </span>
+
+          <div className="flex items-center space-x-2">
+            <LanguageSwitcher className="ml-3" />
+            <ThemeToggle className="scale-90" />
+          </div>
         </div>
 
         {/* Progress bar */}

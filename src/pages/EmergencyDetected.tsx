@@ -4,6 +4,8 @@ import { useEmergencySession } from '../contexts/EmergencySessionContext';
 import { Button } from '../components/ui/Button';
 import { EmergencyTimer } from '../components/emergency/EmergencyTimer';
 import { LocationSharing } from '../components/location/LocationSharing';
+import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
 
 export const EmergencyDetected = () => {
   const navigate = useNavigate();
@@ -60,9 +62,12 @@ export const EmergencyDetected = () => {
           <div className="space-y-6">
             {/* Header */}
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-red-400 mb-2">
-                POSSIBLE MEDICAL EMERGENCY
-              </h1>
+              <div className="flex items-center justify-center gap-4">
+                <h1 className="text-3xl font-bold text-red-400 mb-2">
+                  POSSIBLE MEDICAL EMERGENCY
+                </h1>
+                <LanguageSwitcher className="ml-4" />
+              </div>
               <p className="text-gray-300 text-lg max-w-md mx-auto">
                 The prototype assessment indicates that immediate assistance may be required.
               </p>

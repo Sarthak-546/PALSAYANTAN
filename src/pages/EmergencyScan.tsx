@@ -569,6 +569,8 @@ export const EmergencyScan = () => {
               <RefreshCcw className="w-4 h-4" />
             </button>
           )}
+
+          <LanguageSwitcher className="ml-3" />
         </div>
 
         <span className="pointer-events-none flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide text-white shadow-sm">
