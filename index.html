@@ -10,6 +10,11 @@
     <meta name="theme-color" content="#020617" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    <!-- Preload critical assets for faster initial rendering -->
+    <link rel="preload" href="/videos/press2.mp4" as="video">
+    <link rel="preload" href="/videos/pcpr.mp4" as="video">
+    <link rel="preload" href="/videos/pcpr2.mp4" as="video">
+    <link rel="preload" href="/hand.png" as="image">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
   </head>
