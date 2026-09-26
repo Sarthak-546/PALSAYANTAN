@@ -7,6 +7,7 @@ import { LocationSharing } from '../components/location/LocationSharing';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher';
 import { Phone } from 'lucide-react';
+import { buildSosSmsUri, openExternal } from '../../services/EmergencyService';
 
 export const Location = () => {
   const navigate = useNavigate();
@@ -61,11 +62,14 @@ export const Location = () => {
             break;
         }
         setLocationError(errorMessage);
+        // Instantly route to SMS without coordinates so dispatch isn't delayed
+        const fallbackUri = buildSosSmsUri(null, 'Immediate medical assistance required! (GPS unavailable)');
+        openExternal(fallbackUri);
         setIsFetching(false);
       },
       {
         enableHighAccuracy: true,
-        timeout: 8000,
+        timeout: 15000,
         maximumAge: 0,
       }
     );
@@ -78,20 +82,19 @@ export const Location = () => {
   const handleShareLocation = () => {
     if (!currentLocation) {
       // Provide fallback message when GPS is unavailable
-      const mapsUrl = `https://maps.google.com/?q=0,0`;
-      const message = `EMERGENCY: Immediate medical assistance required! Location: ${mapsUrl} (Lat: 0.000000, Long: 0.000000)`;
-      const smsUri = `sms:112?&body=${encodeURIComponent(message)}`;
-      window.location.href = smsUri;
+      const smsUri = buildSosSmsUri(null, 'Immediate medical assistance required! (GPS unavailable)');
+      openExternal(smsUri);
       return;
     }
 
     // Format payload for cross-platform cellular SMS URI standard
-    const mapsUrl = `https://maps.google.com/?q=${currentLocation.latitude.toFixed(6)},${currentLocation.longitude.toFixed(6)}`;
-    const message = `EMERGENCY: Immediate medical assistance required! Location: ${mapsUrl} (Lat: ${currentLocation.latitude.toFixed(6)}, Long: ${currentLocation.longitude.toFixed(6)})`;
-    const smsUri = `sms:112?&body=${encodeURIComponent(message)}`;
+    const smsUri = buildSosSmsUri(
+      { lat: currentLocation.latitude, lon: currentLocation.longitude },
+      'Immediate medical assistance required!'
+    );
 
     // Wire the primary "Share Location" button directly to SMS URI
-    window.location.href = smsUri;
+    openExternal(smsUri);
   };
 
   const handleUseDemoLocation = () => {

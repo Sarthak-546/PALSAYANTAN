@@ -1,36 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
-
-// ── Indian emergency numbers ─────────────────────────────────────────────────
-const SOS_NUMBER = '112'; // National unified emergency (Police / Fire / Medical)
-const AMBULANCE_108 = '108'; // Emergency ambulance services
-const NATIONAL_112 = '112'; // National SOS
+import { buildSosSmsUri, openExternal } from '../../services/EmergencyService';
 
 type Fix = { lat: number; lon: number; at: number };
 
-/** Builds the pre-filled SOS text message. Exported so it can be unit-tested. */
-export const buildSosSmsUri = (fix: { lat: number; lon: number } | null | undefined, remark: string) => {
-  const body = fix
-    ? `EMERGENCY: ${remark}. Location: https://maps.google.com/?q=${fix.lat.toFixed(6)},${fix.lon.toFixed(6)} (Lat: ${fix.lat.toFixed(6)}, Lng: ${fix.lon.toFixed(6)})`
-    : `EMERGENCY: ${remark}. Immediate ambulance required! (GPS unavailable)`;
-  // "?&body=" is the form both Android and iOS accept ("?body=" alone fails on iOS).
-  return `sms:${SOS_NUMBER}?&body=${encodeURIComponent(body)}`;
-};
-
-// Programmatic click on a detached-then-attached anchor: opens the SMS app or
-// phone dialer without touching the SPA (no reload) and works across browsers.
-const openExternal = (uri: string) => {
-  const a = document.createElement('a');
-  a.href = uri;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-};
-
 const FRESH_MS = 2 * 60 * 1000;
-
-const MATERNITY_102 = '102'; // Maternity transport
 
 export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeProtocol, language = 'en' }: { onEmergencyDetected?: () => void, isPregnancy?: boolean, activeProtocol?: string, language?: 'en' | 'hi' }) => {
   const [status, setStatus] = useState<'idle' | 'locating' | 'no-gps'>('idle');
@@ -113,7 +87,7 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
         setGpsReady(true);
       },
       (e) => setMessage(e.code === 1 ? 'Location permission denied — SMS will be sent without coordinates.' : null),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 8000 },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
     );
     return () => navigator.geolocation.clearWatch(id);
   }, []);
@@ -140,7 +114,7 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
         setMessage('Could not get a GPS lock — opening SMS without coordinates.');
         send(null); // never leave the user stuck: SOS goes out with or without GPS
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   };
 
