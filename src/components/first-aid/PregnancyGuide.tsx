@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Video } from 'lucide-react';
 import { AudioGuidance } from '../ar/AudioGuidance';
 import { useEmergencySession } from '../../contexts/EmergencySessionContext';
+import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher';
 
 const PREGNANCY_CPR_TEXT = "Wait! Standard CPR on a pregnant woman can reduce blood flow by 30 percent due to caval compression. If she is unconscious and not breathing normally, call 102 immediately. You must continuously shift the pregnant belly to her left side using Left Uterine Displacement while applying chest compressions at 100 to 120 beats per minute on the lower half of the sternum. Never lay her flat on her back without shifting the uterus to the left.";
 
@@ -61,6 +62,7 @@ export const PregnancyGuide = () => {
         >
           2. Left Recovery Pos.
         </button>
+        <LanguageSwitcher className="ml-auto" />
       </div>
 
       <div className="rounded-3xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl flex flex-col">
@@ -131,12 +133,22 @@ export const PregnancyGuide = () => {
 
       {/* Emergency Action Footer */}
       <div className="flex gap-3 mt-2">
-        <a href="tel:102" className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-bold rounded-2xl shadow-lg shadow-fuchsia-600/30 transition-all active:scale-95">
+        <button
+          onClick={() => {
+            window.location.href = 'tel:102';
+          }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-bold rounded-2xl shadow-lg shadow-fuchsia-600/30 transition-all active:scale-95"
+        >
           🚑 Call 102 (Maternity)
-        </a>
-        <a href="tel:112" className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-2xl shadow-lg shadow-red-600/30 transition-all active:scale-95">
+        </button>
+        <button
+          onClick={() => {
+            window.location.href = 'tel:112';
+          }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-2xl shadow-lg shadow-red-600/30 transition-all active:scale-95"
+        >
           📞 Call 112 (National SOS)
-        </a>
+        </button>
       </div>
     </div>
   );

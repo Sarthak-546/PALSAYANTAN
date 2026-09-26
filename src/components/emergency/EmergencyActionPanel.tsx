@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 
 // ── Indian emergency numbers ─────────────────────────────────────────────────
 const SOS_NUMBER = '112'; // National unified emergency (Police / Fire / Medical)
@@ -161,15 +162,18 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
         </div>
       )}
 
-      {/* ── Compact Header: Remark Trigger + GPS ── */}
+      {/* ── Compact Header: Remark Trigger + GPS + Language Switcher ── */}
       <div className="flex items-center justify-between gap-2">
-        <button
-          onClick={() => setIsRemarkEditing(!isRemarkEditing)}
-          className="flex-1 flex items-center justify-between bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-[10px] text-slate-300 active:scale-[0.98] transition-all"
-        >
-          <span className="truncate">⚡ {PANEL_UI[language].detailsLabel.split('/')[0].trim()}: {emergencyRemark}</span>
-          <span className="opacity-70">✎</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsRemarkEditing(!isRemarkEditing)}
+            className="flex-1 flex items-center justify-between bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-[10px] text-slate-300 active:scale-[0.98] transition-all"
+          >
+            <span className="truncate">⚡ {PANEL_UI[language].detailsLabel.split('/')[0].trim()}: {emergencyRemark}</span>
+            <span className="opacity-70">✎</span>
+          </button>
+          <LanguageSwitcher className="ml-3" />
+        </div>
       </div>
 
       {isRemarkEditing && (
@@ -209,21 +213,25 @@ export const EmergencyActionPanel = ({ onEmergencyDetected, isPregnancy, activeP
           <span className="truncate">{TRANSLATIONS[language].sosPrefix.split(' - ')[0]}</span>
         </button>
 
-        <a
-          href={`tel:${AMBULANCE_108}`}
+        <button
+          onClick={() => {
+            window.location.href = `tel:${AMBULANCE_108}`;
+          }}
           className="flex-[1] py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 active:scale-95 text-emerald-400 font-bold text-[10px] rounded-xl flex items-center justify-center gap-1 transition-all"
           title="Call 108 Ambulance"
         >
           <span>📞 108</span>
-        </a>
+        </button>
 
-        <a
-          href={`tel:${NATIONAL_112}`}
+        <button
+          onClick={() => {
+            window.location.href = `tel:${NATIONAL_112}`;
+          }}
           className="flex-[1] py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 active:scale-95 text-red-400 font-bold text-[10px] rounded-xl flex items-center justify-center gap-1 transition-all"
           title="Call 112 Emergency"
         >
           <span>📞 112</span>
-        </a>
+        </button>
       </div>
 
       {/* GPS status badge */}
